@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -21,10 +21,6 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-Contributors/Copyright
-    2014 Hagen Müller <hagen.mueller@unibw.de> Universität der Bundeswehr München
-    2014 Likun Ma <L.Ma@tudelft.nl> TU Delft
-
 \*---------------------------------------------------------------------------*/
 
 #include "reactingMixture.H"
@@ -36,11 +32,12 @@ template<class ThermoType>
 Foam::reactingMixture<ThermoType>::reactingMixture
 (
     const dictionary& thermoDict,
-    const fvMesh& mesh
+    const fvMesh& mesh,
+    const word& phaseName
 )
 :
     speciesTable(),
-    autoPtr<chemistryReader<ThermoType> >
+    autoPtr<chemistryReader<ThermoType>>
     (
         chemistryReader<ThermoType>::New(thermoDict, *this)
     ),
@@ -48,15 +45,20 @@ Foam::reactingMixture<ThermoType>::reactingMixture
     (
         thermoDict,
         *this,
-        autoPtr<chemistryReader<ThermoType> >::operator()().speciesThermo(),
-        mesh
+        autoPtr<chemistryReader<ThermoType>>::operator()().speciesThermo(),
+        mesh,
+        phaseName
     ),
-    PtrList<Reaction<ThermoType> >
+    PtrList<Reaction<ThermoType>>
     (
-        autoPtr<chemistryReader<ThermoType> >::operator()().reactions()
+        autoPtr<chemistryReader<ThermoType>>::operator()().reactions()
+    ),
+    speciesComposition_
+    (
+        autoPtr<chemistryReader<ThermoType>>::operator()().specieComposition()
     )
 {
-    autoPtr<chemistryReader<ThermoType> >::clear();
+    autoPtr<chemistryReader<ThermoType>>::clear();
 }
 
 

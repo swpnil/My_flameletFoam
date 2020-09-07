@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2012-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2012-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -46,7 +46,6 @@ License
 #define makeReactions(Thermo, Reaction)                                        \
                                                                                \
     defineTemplateTypeNameAndDebug(Reaction, 0);                               \
-    defineTemplateRunTimeSelectionTable(Reaction, Istream);                    \
     defineTemplateRunTimeSelectionTable(Reaction, dictionary);                 \
                                                                                \
     makeIRNReactions(Thermo, ArrheniusReactionRate)                            \
@@ -93,6 +92,13 @@ namespace Foam
     )
     makeReactions(incompressibleGasHThermoPhysics, incompressibleGasHReaction)
     makeReactions(icoPoly8HThermoPhysics, icoPoly8HReaction)
+    makeReactions(constFluidHThermoPhysics, constFluidHReaction)
+    makeReactions
+    (
+        constAdiabaticFluidHThermoPhysics,
+        constAdiabaticFluidHReaction
+    )
+    makeReactions(constHThermoPhysics, constHReaction)
 
     makeReactions(constGasEThermoPhysics, constGasEReaction)
     makeReactions(gasEThermoPhysics, gasEReaction)
@@ -103,6 +109,13 @@ namespace Foam
     )
     makeReactions(incompressibleGasEThermoPhysics, incompressibleGasEReaction)
     makeReactions(icoPoly8EThermoPhysics, icoPoly8EReaction)
+    makeReactions(constFluidEThermoPhysics, constFluidEReaction)
+    makeReactions
+    (
+        constAdiabaticFluidEThermoPhysics,
+        constAdiabaticFluidEReaction
+    )
+    makeReactions(constEThermoPhysics, constEReaction)
 }
 
 // ************************************************************************* //

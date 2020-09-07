@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -29,11 +29,6 @@ Description
 
 SourceFiles
     heRhoThermo.C
-
-Contributors/Copyright
-    2014 Hagen Müller <hagen.mueller@unibw.de> Universität der Bundeswehr München
-    2014 Likun Ma <L.Ma@tudelft.nl> TU Delft
-
 
 \*---------------------------------------------------------------------------*/
 
@@ -100,7 +95,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-#   include "heRhoThermo.C"
+    #include "heRhoThermo.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

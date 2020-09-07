@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2012-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2012-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -57,13 +57,6 @@ inline incompressiblePerfectGas<Specie> operator+
 );
 
 template<class Specie>
-inline incompressiblePerfectGas<Specie> operator-
-(
-    const incompressiblePerfectGas<Specie>&,
-    const incompressiblePerfectGas<Specie>&
-);
-
-template<class Specie>
 inline incompressiblePerfectGas<Specie> operator*
 (
     const scalar,
@@ -107,12 +100,6 @@ public:
         //- Construct from components
         inline incompressiblePerfectGas(const Specie& sp, const scalar pRef);
 
-        //- Construct from incompressiblePerfectGas
-        inline incompressiblePerfectGas(const incompressiblePerfectGas& sp);
-
-        //- Construct from Istream
-        incompressiblePerfectGas(Istream&);
-
         //- Construct from dictionary
         incompressiblePerfectGas(const dictionary& dict);
 
@@ -125,9 +112,6 @@ public:
 
         //- Construct and return a clone
         inline autoPtr<incompressiblePerfectGas> clone() const;
-
-        // Selector from Istream
-        inline static autoPtr<incompressiblePerfectGas> New(Istream& is);
 
         // Selector from dictionary
         inline static autoPtr<incompressiblePerfectGas> New
@@ -158,14 +142,23 @@ public:
             //- Return density [kg/m^3]
             inline scalar rho(scalar p, scalar T) const;
 
+            //- Return enthalpy departure [J/kg]
+            inline scalar H(const scalar p, const scalar T) const;
+
+            //- Return Cp departure [J/(kg K]
+            inline scalar Cp(scalar p, scalar T) const;
+
+            //- Return entropy [J/(kg K)]
+            inline scalar S(const scalar p, const scalar T) const;
+
             //- Return compressibility rho/p [s^2/m^2]
             inline scalar psi(scalar p, scalar T) const;
 
             //- Return compression factor []
             inline scalar Z(scalar p, scalar T) const;
 
-            //- Return (cp - cv) [J/(kmol K]
-            inline scalar cpMcv(scalar p, scalar T) const;
+            //- Return (Cp - Cv) [J/(kg K]
+            inline scalar CpMCv(scalar p, scalar T) const;
 
 
         // IO
@@ -176,25 +169,14 @@ public:
 
     // Member operators
 
-        inline incompressiblePerfectGas& operator=
-        (
-            const incompressiblePerfectGas&
-        );
+        inline void operator=(const incompressiblePerfectGas&);
         inline void operator+=(const incompressiblePerfectGas&);
-        inline void operator-=(const incompressiblePerfectGas&);
-
         inline void operator*=(const scalar);
 
 
     // Friend operators
 
         friend incompressiblePerfectGas operator+ <Specie>
-        (
-            const incompressiblePerfectGas&,
-            const incompressiblePerfectGas&
-        );
-
-        friend incompressiblePerfectGas operator- <Specie>
         (
             const incompressiblePerfectGas&,
             const incompressiblePerfectGas&
@@ -232,7 +214,7 @@ public:
 #include "incompressiblePerfectGasI.H"
 
 #ifdef NoRepository
-#   include "incompressiblePerfectGas.C"
+    #include "incompressiblePerfectGas.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

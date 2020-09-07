@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -26,25 +26,40 @@ License
 #include "sutherlandTransport.H"
 #include "IOstreams.H"
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
 template<class Thermo>
-Foam::sutherlandTransport<Thermo>::sutherlandTransport(Istream& is)
-:
-    Thermo(is),
-    As_(readScalar(is)),
-    Ts_(readScalar(is))
+Foam::scalar Foam::sutherlandTransport<Thermo>::readCoeff
+(
+    const word& coeffName,
+    const dictionary& dict
+)
 {
-    is.check("sutherlandTransport<Thermo>::sutherlandTransport(Istream&)");
+    return readScalar(dict.subDict("transport").lookup(coeffName));
 }
 
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class Thermo>
 Foam::sutherlandTransport<Thermo>::sutherlandTransport(const dictionary& dict)
 :
     Thermo(dict),
-    As_(readScalar(dict.subDict("transport").lookup("As"))),
-    Ts_(readScalar(dict.subDict("transport").lookup("Ts")))
+    As_(readCoeff("As", dict)),
+    Ts_(readCoeff("Ts", dict))
+{}
+
+
+template<class Thermo>
+Foam::sutherlandTransport<Thermo>::sutherlandTransport
+(
+    const Thermo& t,
+    const dictionary& dict
+)
+:
+    Thermo(t),
+    As_(readCoeff("As", dict)),
+    Ts_(readCoeff("Ts", dict))
 {}
 
 
@@ -53,18 +68,19 @@ Foam::sutherlandTransport<Thermo>::sutherlandTransport(const dictionary& dict)
 template<class Thermo>
 void Foam::sutherlandTransport<Thermo>::write(Ostream& os) const
 {
-    os  << this->specie::name() << endl;
-    os  << token::BEGIN_BLOCK  << incrIndent << nl;
+    os  << this->specie::name() << endl
+        << token::BEGIN_BLOCK  << incrIndent << nl;
 
     Thermo::write(os);
 
     dictionary dict("transport");
     dict.add("As", As_);
     dict.add("Ts", Ts_);
-    os  << indent << dict.dictName() << dict;
 
-    os  << decrIndent << token::END_BLOCK << nl;
+    os  << indent << dict.dictName() << dict
+        << decrIndent << token::END_BLOCK << nl;
 }
+
 
 // * * * * * * * * * * * * * * * IOstream Operators  * * * * * * * * * * * * //
 
@@ -75,13 +91,7 @@ Foam::Ostream& Foam::operator<<
     const sutherlandTransport<Thermo>& st
 )
 {
-    os << static_cast<const Thermo&>(st) << tab << st.As_ << tab << st.Ts_;
-
-    os.check
-    (
-        "Ostream& operator<<(Ostream&, const sutherlandTransport<Thermo>&)"
-    );
-
+    st.write(os);
     return os;
 }
 

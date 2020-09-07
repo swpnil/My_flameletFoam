@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -33,8 +33,8 @@ SourceFiles
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef noChemistySolver_H
-#define noChemistySolver_H
+#ifndef noChemistrySolver_H
+#define noChemistrySolver_H
 
 #include "chemistrySolver.H"
 
@@ -61,8 +61,8 @@ public:
 
     // Constructors
 
-        //- Construct from components
-        noChemistrySolver(const fvMesh& mesh);
+        //- Construct from thermo
+        noChemistrySolver(typename ChemistryModel::reactionThermo& thermo);
 
 
     //- Destructor
@@ -90,7 +90,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-#   include "noChemistrySolver.C"
+    #include "noChemistrySolver.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

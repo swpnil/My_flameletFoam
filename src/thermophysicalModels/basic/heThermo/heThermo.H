@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -29,10 +29,6 @@ Description
 
 SourceFiles
     heThermo.C
-
-Contributors/Copyright
-    2014 Hagen Müller <hagen.mueller@unibw.de> Universität der Bundeswehr München
-    2014 Likun Ma <L.Ma@tudelft.nl> TU Delft
 
 \*---------------------------------------------------------------------------*/
 
@@ -122,6 +118,12 @@ public:
         composition() const
         {
             return *this;
+        }
+
+        //- Return the name of the thermo physics
+        virtual word thermoName() const
+        {
+            return MixtureType::thermoType::typeName();
         }
 
         //- Return true if the equation of state is incompressible
@@ -224,10 +226,10 @@ public:
             //- Heat capacity at constant volume [J/kg/K]
             virtual tmp<volScalarField> Cv() const;
 
-            //- gamma = Cp/Cv []
+            //- Gamma = Cp/Cv []
             virtual tmp<volScalarField> gamma() const;
 
-            //- gamma = Cp/Cv for patch []
+            //- Gamma = Cp/Cv for patch []
             virtual tmp<scalarField> gamma
             (
                 const scalarField& p,
@@ -257,24 +259,36 @@ public:
                 const label patchi
             ) const;
 
+            //- Molecular weight [kg/kmol]
+            virtual tmp<volScalarField> W() const;
+
 
         // Fields derived from transport state variables
 
             //- Thermal diffusivity for temperature of mixture [J/m/s/K]
             virtual tmp<volScalarField> kappa() const;
 
-            //- Thermal diffusivity for temperature
-            //  of mixture for patch [J/m/s/K]
+            //- Thermal diffusivity for temperature of mixture
+            //  for patch [J/m/s/K]
             virtual tmp<scalarField> kappa
             (
                 const label patchi
             ) const;
 
-            //- Effective thermal diffusivity for temperature
-            //  of mixture [J/m/s/K]
-            virtual tmp<volScalarField> kappaEff(const volScalarField&) const;
+            //- Thermal diffusivity for energy of mixture [kg/m/s]
+            virtual tmp<volScalarField> alphahe() const;
 
-            //- Effective thermal diffusivity for temperature
+            //- Thermal diffusivity for energy of mixture for patch [kg/m/s]
+            virtual tmp<scalarField> alphahe(const label patchi) const;
+
+            //- Effective thermal turbulent diffusivity for temperature
+            //  of mixture [J/m/s/K]
+            virtual tmp<volScalarField> kappaEff
+            (
+                const volScalarField&
+            ) const;
+
+            //- Effective thermal turbulent diffusivity for temperature
             //  of mixture for patch [J/m/s/K]
             virtual tmp<scalarField> kappaEff
             (
@@ -282,13 +296,14 @@ public:
                 const label patchi
             ) const;
 
-            //- Effective thermal diffusivity of mixture [kg/m/s]
+            //- Effective thermal turbulent diffusivity of mixture [kg/m/s]
             virtual tmp<volScalarField> alphaEff
             (
                 const volScalarField& alphat
             ) const;
 
-            //- Effective thermal diffusivity of mixture for patch [kg/m/s]
+            //- Effective thermal turbulent diffusivity of mixture
+            //  for patch [kg/m/s]
             virtual tmp<scalarField> alphaEff
             (
                 const scalarField& alphat,
@@ -308,7 +323,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 #ifdef NoRepository
-#   include "heThermo.C"
+    #include "heThermo.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

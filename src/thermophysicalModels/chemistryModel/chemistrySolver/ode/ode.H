@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -55,7 +55,8 @@ class ode
     // Private data
 
         dictionary coeffsDict_;
-        autoPtr<ODESolver> odeSolver_;
+
+        mutable autoPtr<ODESolver> odeSolver_;
 
         // Solver data
         mutable scalarField cTp_;
@@ -69,8 +70,8 @@ public:
 
     // Constructors
 
-        //- Construct from mesh
-        ode(const fvMesh& mesh);
+        //- Construct from thermo
+        ode(typename ChemistryModel::reactionThermo& thermo);
 
 
     //- Destructor
@@ -98,7 +99,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-#   include "ode.C"
+    #include "ode.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

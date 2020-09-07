@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -30,16 +30,12 @@ Description
 SourceFiles
     multiComponentMixture.C
 
-Contributors/Copyright
-    2014 Hagen Müller <hagen.mueller@unibw.de> Universität der Bundeswehr München
-    2014 Likun Ma <L.Ma@tudelft.nl> TU Delft
-
 \*---------------------------------------------------------------------------*/
 
 #ifndef multiComponentMixture_H
 #define multiComponentMixture_H
 
-#include "basicMultiComponentMixture.H"
+#include "basicSpecieMixture.H"
 #include "HashPtrTable.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -54,7 +50,7 @@ namespace Foam
 template<class ThermoType>
 class multiComponentMixture
 :
-    public basicMultiComponentMixture
+    public basicSpecieMixture
 {
     // Private data
 
@@ -90,17 +86,19 @@ public:
 
     // Constructors
 
-        //- Construct from dictionary, specie names, thermo database and mesh
+        //- Construct from dictionary, specie names, thermo database,
+        //  mesh and phase name
         multiComponentMixture
         (
             const dictionary&,
             const wordList& specieNames,
             const HashPtrTable<ThermoType>& thermoData,
-            const fvMesh&
+            const fvMesh&,
+            const word&
         );
 
-        //- Construct from dictionary and mesh
-        multiComponentMixture(const dictionary&, const fvMesh&);
+        //- Construct from dictionary, mesh and phase name
+        multiComponentMixture(const dictionary&, const fvMesh&, const word&);
 
 
     //- Destructor
@@ -109,6 +107,12 @@ public:
 
 
     // Member functions
+
+        //- Return the instantiated type name
+        static word typeName()
+        {
+            return "multiComponentMixture<" + ThermoType::typeName() + '>';
+        }
 
         const ThermoType& cellMixture(const label celli) const;
 
@@ -157,7 +161,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-#   include "multiComponentMixture.C"
+    #include "multiComponentMixture.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -20,11 +20,6 @@ License
 
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
-
-Contributors/Copyright
-    2014 Hagen Müller <hagen.mueller@unibw.de> Universität der Bundeswehr München
-    2014 Likun Ma <L.Ma@tudelft.nl> TU Delft
-
 
 \*---------------------------------------------------------------------------*/
 
@@ -55,7 +50,7 @@ Foam::rhoThermo::rhoThermo(const fvMesh& mesh, const word& phaseName)
             IOobject::NO_WRITE
         ),
         mesh,
-        dimensionedScalar("rhoThermo", dimDensity, 1.205)
+        dimDensity
     ),
 
     psi_
@@ -66,7 +61,7 @@ Foam::rhoThermo::rhoThermo(const fvMesh& mesh, const word& phaseName)
             mesh.time().timeName(),
             mesh,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh,
         dimensionSet(0, -2, 2, 0, 0)
@@ -80,7 +75,7 @@ Foam::rhoThermo::rhoThermo(const fvMesh& mesh, const word& phaseName)
             mesh.time().timeName(),
             mesh,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh,
         dimensionSet(1, -1, -1, 0, 0)
@@ -107,8 +102,7 @@ Foam::rhoThermo::rhoThermo
             IOobject::NO_WRITE
         ),
         mesh,
-        dimensionedScalar("rhoThermo", dimDensity, 1.205)  
-//        dimDensity
+        dimDensity
     ),
 
     psi_
@@ -119,7 +113,7 @@ Foam::rhoThermo::rhoThermo
             mesh.time().timeName(),
             mesh,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh,
         dimensionSet(0, -2, 2, 0, 0)
@@ -133,7 +127,7 @@ Foam::rhoThermo::rhoThermo
             mesh.time().timeName(),
             mesh,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh,
         dimensionSet(1, -1, -1, 0, 0)
@@ -179,9 +173,9 @@ Foam::volScalarField& Foam::rhoThermo::rho()
 }
 
 
-Foam::volScalarField& Foam::rhoThermo::psi()
+void Foam::rhoThermo::correctRho(const Foam::volScalarField& deltaRho)
 {
-    return psi_;
+    rho_ += deltaRho;
 }
 
 
@@ -191,19 +185,13 @@ const Foam::volScalarField& Foam::rhoThermo::psi() const
 }
 
 
-Foam::volScalarField& Foam::rhoThermo::mu()
-{
-	return mu_;
-}
-
-
-const Foam::volScalarField& Foam::rhoThermo::mu() const
+Foam::tmp<Foam::volScalarField> Foam::rhoThermo::mu() const
 {
     return mu_;
 }
 
 
-const Foam::scalarField& Foam::rhoThermo::mu(const label patchi) const
+Foam::tmp<Foam::scalarField> Foam::rhoThermo::mu(const label patchi) const
 {
     return mu_.boundaryField()[patchi];
 }

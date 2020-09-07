@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -63,10 +63,10 @@ inline Foam::adiabaticPerfectFluid<Specie>::adiabaticPerfectFluid
 
 
 template<class Specie>
-inline Foam::autoPtr<Foam::adiabaticPerfectFluid<Specie> >
+inline Foam::autoPtr<Foam::adiabaticPerfectFluid<Specie>>
 Foam::adiabaticPerfectFluid<Specie>::clone() const
 {
-    return autoPtr<adiabaticPerfectFluid<Specie> >
+    return autoPtr<adiabaticPerfectFluid<Specie>>
     (
         new adiabaticPerfectFluid<Specie>(*this)
     );
@@ -74,24 +74,13 @@ Foam::adiabaticPerfectFluid<Specie>::clone() const
 
 
 template<class Specie>
-inline Foam::autoPtr<Foam::adiabaticPerfectFluid<Specie> >
-Foam::adiabaticPerfectFluid<Specie>::New(Istream& is)
-{
-    return autoPtr<adiabaticPerfectFluid<Specie> >
-    (
-        new adiabaticPerfectFluid<Specie>(is)
-    );
-}
-
-
-template<class Specie>
-inline Foam::autoPtr<Foam::adiabaticPerfectFluid<Specie> >
+inline Foam::autoPtr<Foam::adiabaticPerfectFluid<Specie>>
 Foam::adiabaticPerfectFluid<Specie>::New
 (
     const dictionary& dict
 )
 {
-    return autoPtr<adiabaticPerfectFluid<Specie> >
+    return autoPtr<adiabaticPerfectFluid<Specie>>
     (
         new adiabaticPerfectFluid<Specie>(dict)
     );
@@ -104,7 +93,7 @@ template<class Specie>
 inline Foam::scalar Foam::adiabaticPerfectFluid<Specie>::rho
 (
     scalar p,
-    scalar
+    scalar T
 ) const
 {
     return rho0_*pow((p + B_)/(p0_ + B_), 1.0/gamma_);
@@ -112,10 +101,46 @@ inline Foam::scalar Foam::adiabaticPerfectFluid<Specie>::rho
 
 
 template<class Specie>
+inline Foam::scalar Foam::adiabaticPerfectFluid<Specie>::H
+(
+    scalar p,
+    scalar T
+) const
+{
+    return 0;
+}
+
+
+template<class Specie>
+inline Foam::scalar Foam::adiabaticPerfectFluid<Specie>::Cp
+(
+    scalar p,
+    scalar T
+) const
+{
+    return 0;
+}
+
+
+template<class Specie>
+inline Foam::scalar Foam::adiabaticPerfectFluid<Specie>::S
+(
+    scalar p,
+    scalar T
+) const
+{
+    scalar n = 1 - 1.0/gamma_;
+    return
+       -pow(p0_ + B_, 1.0/gamma_)*(pow((p + B_), n) - pow((Pstd + B_), n))
+       /(rho0_*T*n);
+}
+
+
+template<class Specie>
 inline Foam::scalar Foam::adiabaticPerfectFluid<Specie>::psi
 (
     scalar p,
-    scalar
+    scalar T
 ) const
 {
     return
@@ -127,15 +152,15 @@ inline Foam::scalar Foam::adiabaticPerfectFluid<Specie>::psi
 template<class Specie>
 inline Foam::scalar Foam::adiabaticPerfectFluid<Specie>::Z(scalar, scalar) const
 {
-    return 1.0;
+    return 1;
 }
 
 
 template<class Specie>
-inline Foam::scalar Foam::adiabaticPerfectFluid<Specie>::cpMcv
+inline Foam::scalar Foam::adiabaticPerfectFluid<Specie>::CpMCv
 (
-    scalar,
-    scalar
+    scalar p,
+    scalar T
 ) const
 {
     return 0;
@@ -150,37 +175,19 @@ inline void Foam::adiabaticPerfectFluid<Specie>::operator+=
     const adiabaticPerfectFluid<Specie>& pf
 )
 {
-    scalar molr1 = this->nMoles();
-
+    scalar Y1 = this->Y();
     Specie::operator+=(pf);
 
-    molr1 /= this->nMoles();
-    scalar molr2 = pf.nMoles()/this->nMoles();
+    if (mag(this->Y()) > small)
+    {
+        Y1 /= this->Y();
+        const scalar Y2 = pf.Y()/this->Y();
 
-    p0_ = molr1*p0_ + molr2*pf.p0_;
-    rho0_ = molr1*rho0_ + molr2*pf.rho0_;
-    gamma_ = molr1*gamma_ + molr2*pf.gamma_;
-    B_ = molr1*B_ + molr2*pf.B_;
-}
-
-
-template<class Specie>
-inline void Foam::adiabaticPerfectFluid<Specie>::operator-=
-(
-    const adiabaticPerfectFluid<Specie>& pf
-)
-{
-    scalar molr1 = this->nMoles();
-
-    Specie::operator-=(pf);
-
-    molr1 /= this->nMoles();
-    scalar molr2 = pf.nMoles()/this->nMoles();
-
-    p0_ = molr1*p0_ - molr2*pf.p0_;
-    rho0_ = molr1*rho0_ - molr2*pf.rho0_;
-    gamma_ = molr1*gamma_ - molr2*pf.gamma_;
-    B_ = molr1*B_ - molr2*pf.B_;
+        p0_ = Y1*p0_ + Y2*pf.p0_;
+        rho0_ = Y1*rho0_ + Y2*pf.rho0_;
+        gamma_ = Y1*gamma_ + Y2*pf.gamma_;
+        B_ = Y1*B_ + Y2*pf.B_;
+    }
 }
 
 
@@ -200,42 +207,37 @@ inline Foam::adiabaticPerfectFluid<Specie> Foam::operator+
     const adiabaticPerfectFluid<Specie>& pf2
 )
 {
-    scalar nMoles = pf1.nMoles() + pf2.nMoles();
-    scalar molr1 = pf1.nMoles()/nMoles;
-    scalar molr2 = pf2.nMoles()/nMoles;
-
-    return rhoConst<Specie>
+    Specie sp
     (
         static_cast<const Specie&>(pf1)
-      + static_cast<const Specie&>(pf2),
-        molr1*pf1.p0_ + molr2*pf2.p0_,
-        molr1*pf1.rho0_ + molr2*pf2.rho0_,
-        molr1*pf1.gamma_ + molr2*pf2.gamma_,
-        molr1*pf1.B_ + molr2*pf2.B_
+      + static_cast<const Specie&>(pf2)
     );
-}
 
+    if (mag(sp.Y()) < small)
+    {
+        return adiabaticPerfectFluid<Specie>
+        (
+            sp,
+            pf1.p0_,
+            pf1.rho0_,
+            pf1.gamma_,
+            pf1.B_
+        );
+    }
+    else
+    {
+        const scalar Y1 = pf1.Y()/sp.Y();
+        const scalar Y2 = pf2.Y()/sp.Y();
 
-template<class Specie>
-inline Foam::adiabaticPerfectFluid<Specie> Foam::operator-
-(
-    const adiabaticPerfectFluid<Specie>& pf1,
-    const adiabaticPerfectFluid<Specie>& pf2
-)
-{
-    scalar nMoles = pf1.nMoles() + pf2.nMoles();
-    scalar molr1 = pf1.nMoles()/nMoles;
-    scalar molr2 = pf2.nMoles()/nMoles;
-
-    return rhoConst<Specie>
-    (
-        static_cast<const Specie&>(pf1)
-      - static_cast<const Specie&>(pf2),
-        molr1*pf1.p0_ - molr2*pf2.p0_,
-        molr1*pf1.rho0_ - molr2*pf2.rho0_,
-        molr1*pf1.gamma_ - molr2*pf2.gamma_,
-        molr1*pf1.B_ - molr2*pf2.B_
-    );
+        return adiabaticPerfectFluid<Specie>
+        (
+            sp,
+            Y1*pf1.p0_ + Y2*pf2.p0_,
+            Y1*pf1.rho0_ + Y2*pf2.rho0_,
+            Y1*pf1.gamma_ + Y2*pf2.gamma_,
+            Y1*pf1.B_ + Y2*pf2.B_
+        );
+    }
 }
 
 
@@ -264,7 +266,23 @@ inline Foam::adiabaticPerfectFluid<Specie> Foam::operator==
     const adiabaticPerfectFluid<Specie>& pf2
 )
 {
-    return pf2 - pf1;
+    Specie sp
+    (
+        static_cast<const Specie&>(pf1)
+     == static_cast<const Specie&>(pf2)
+    );
+
+    const scalar Y1 = pf1.Y()/sp.Y();
+    const scalar Y2 = pf2.Y()/sp.Y();
+
+    return adiabaticPerfectFluid<Specie>
+    (
+        sp,
+        Y2*pf2.p0_    - Y1*pf1.p0_,
+        Y2*pf2.rho0_  - Y1*pf1.rho0_,
+        Y2*pf2.gamma_ - Y1*pf1.gamma_,
+        Y2*pf2.B_     - Y1*pf1.B_
+    );
 }
 
 

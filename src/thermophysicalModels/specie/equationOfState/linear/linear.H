@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -25,7 +25,11 @@ Class
     Foam::linear
 
 Description
-    Perfect gas equation of state.
+    Linear equation of state with constant compressibility
+
+    \verbatim
+        rho = rho0 + psi*p
+    \endverbatim
 
 SourceFiles
     linearI.H
@@ -49,13 +53,6 @@ template<class Specie> class linear;
 
 template<class Specie>
 inline linear<Specie> operator+
-(
-    const linear<Specie>&,
-    const linear<Specie>&
-);
-
-template<class Specie>
-inline linear<Specie> operator-
 (
     const linear<Specie>&,
     const linear<Specie>&
@@ -113,9 +110,6 @@ public:
             const scalar rho0
         );
 
-        //- Construct from Istream
-        linear(Istream&);
-
         //- Construct from dictionary
         linear(const dictionary& dict);
 
@@ -124,9 +118,6 @@ public:
 
         //- Construct and return a clone
         inline autoPtr<linear> clone() const;
-
-        // Selector from Istream
-        inline static autoPtr<linear> New(Istream& is);
 
         // Selector from dictionary
         inline static autoPtr<linear> New(const dictionary& dict);
@@ -152,14 +143,23 @@ public:
             //- Return density [kg/m^3]
             inline scalar rho(scalar p, scalar T) const;
 
+            //- Return enthalpy departure [J/kg]
+            inline scalar H(const scalar p, const scalar T) const;
+
+            //- Return Cp departure [J/(kg K]
+            inline scalar Cp(scalar p, scalar T) const;
+
+            //- Return entropy [J/(kg K)]
+            inline scalar S(const scalar p, const scalar T) const;
+
             //- Return compressibility rho/p [s^2/m^2]
             inline scalar psi(scalar p, scalar T) const;
 
             //- Return compression factor []
             inline scalar Z(scalar p, scalar T) const;
 
-            //- Return (cp - cv) [J/(kmol K]
-            inline scalar cpMcv(scalar p, scalar T) const;
+            //- Return (Cp - Cv) [J/(kg K]
+            inline scalar CpMCv(scalar p, scalar T) const;
 
 
         // IO
@@ -171,20 +171,12 @@ public:
     // Member operators
 
         inline void operator+=(const linear&);
-        inline void operator-=(const linear&);
-
         inline void operator*=(const scalar);
 
 
     // Friend operators
 
         friend linear operator+ <Specie>
-        (
-            const linear&,
-            const linear&
-        );
-
-        friend linear operator- <Specie>
         (
             const linear&,
             const linear&
@@ -222,7 +214,7 @@ public:
 #include "linearI.H"
 
 #ifdef NoRepository
-#   include "linear.C"
+    #include "linear.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

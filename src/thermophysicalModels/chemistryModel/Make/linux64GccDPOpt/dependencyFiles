@@ -1,5 +1,0 @@
-DEPENDENCIES = \
-chemistryModel/basicChemistryModel/basicChemistryModel.dep\
-chemistryModel/rhoChemistryModel/rhoChemistryModel.dep\
-chemistryModel/rhoChemistryModel/rhoChemistryModels.dep\
-chemistrySolver/chemistrySolver/makeChemistrySolvers.dep

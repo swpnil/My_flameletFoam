@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -30,10 +30,6 @@ Description
 SourceFiles
     reactingMixture.C
 
-Contributors/Copyright
-    2014 Hagen Müller <hagen.mueller@unibw.de> Universität der Bundeswehr München
-    2014 Likun Ma <L.Ma@tudelft.nl> TU Delft
-
 \*---------------------------------------------------------------------------*/
 
 #ifndef reactingMixture_H
@@ -56,10 +52,16 @@ template<class ThermoType>
 class reactingMixture
 :
     public speciesTable,
-    public autoPtr<chemistryReader<ThermoType> >,
+    public autoPtr<chemistryReader<ThermoType>>,
     public multiComponentMixture<ThermoType>,
-    public PtrList<Reaction<ThermoType> >
+    public PtrList<Reaction<ThermoType>>
 {
+    // Private member data
+
+        //- Table of species composition
+        speciesCompositionTable speciesComposition_;
+
+
     // Private Member Functions
 
         //- Disallow default bitwise copy construct
@@ -77,8 +79,8 @@ public:
 
     // Constructors
 
-        //- Construct from dictionary and mesh
-        reactingMixture(const dictionary&, const fvMesh&);
+        //- Construct from dictionary, mesh and phase name
+        reactingMixture(const dictionary&, const fvMesh&, const word&);
 
 
     //- Destructor
@@ -88,22 +90,34 @@ public:
 
     // Member functions
 
+        //- Return the instantiated type name
+        static word typeName()
+        {
+            return "reactingMixture<" + ThermoType::typeName() + '>';
+        }
+
         //- Read dictionary
         void read(const dictionary&);
 
         label size() const
         {
-            return PtrList<Reaction<ThermoType> >::size();
+            return PtrList<Reaction<ThermoType>>::size();
         }
 
-        Reaction<ThermoType>& operator [] (const label i)
+        Reaction<ThermoType>& operator[](const label i)
         {
-            return PtrList<Reaction<ThermoType> >::operator[](i);
+            return PtrList<Reaction<ThermoType>>::operator[](i);
         }
 
-        const Reaction<ThermoType>& operator [] (const label i) const
+        const Reaction<ThermoType>& operator[](const label i) const
         {
-            return PtrList<Reaction<ThermoType> >::operator[](i);
+            return PtrList<Reaction<ThermoType>>::operator[](i);
+        }
+
+        //- Table of species composition
+        const speciesCompositionTable& specieComposition() const
+        {
+            return speciesComposition_;
         }
 };
 
@@ -115,7 +129,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-#   include "reactingMixture.C"
+    #include "reactingMixture.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

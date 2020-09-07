@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -49,32 +49,6 @@ NonEquilibriumReversibleReaction
     ReactionType<ReactionThermo>(reaction),
     fk_(forwardReactionRate),
     rk_(reverseReactionRate)
-{}
-
-
-
-template
-<
-    template<class> class ReactionType,
-    class ReactionThermo,
-    class ReactionRate
->
-Foam::NonEquilibriumReversibleReaction
-<
-    ReactionType,
-    ReactionThermo,
-    ReactionRate
->::
-NonEquilibriumReversibleReaction
-(
-    const speciesTable& species,
-    const HashPtrTable<ReactionThermo>& thermoDatabase,
-    Istream& is
-)
-:
-    ReactionType<ReactionThermo>(species, thermoDatabase, is),
-    fk_(species, is),
-    rk_(species, is)
 {}
 
 
@@ -201,6 +175,117 @@ Foam::NonEquilibriumReversibleReaction
 ) const
 {
     return rk_(p, T, c);
+}
+
+
+template
+<
+    template<class> class ReactionType,
+    class ReactionThermo,
+    class ReactionRate
+>
+Foam::scalar
+Foam::NonEquilibriumReversibleReaction
+<
+    ReactionType,
+    ReactionThermo,
+    ReactionRate
+>::dkfdT
+(
+    const scalar p,
+    const scalar T,
+    const scalarField& c
+) const
+{
+    return fk_.ddT(p, T, c);
+}
+
+
+template
+<
+    template<class> class ReactionType,
+    class ReactionThermo,
+    class ReactionRate
+>
+Foam::scalar
+Foam::NonEquilibriumReversibleReaction
+<
+    ReactionType,
+    ReactionThermo,
+    ReactionRate
+>::dkrdT
+(
+    const scalar p,
+    const scalar T,
+    const scalarField& c,
+    const scalar dkfdT,
+    const scalar kr
+) const
+{
+    return rk_.ddT(p, T, c);
+}
+
+
+template
+<
+    template<class> class ReactionType,
+    class ReactionThermo,
+    class ReactionRate
+>
+const Foam::List<Foam::Tuple2<Foam::label, Foam::scalar>>&
+Foam::NonEquilibriumReversibleReaction
+<
+    ReactionType,
+    ReactionThermo,
+    ReactionRate
+>::beta() const
+{
+    return fk_.beta();
+}
+
+
+template
+<
+    template<class> class ReactionType,
+    class ReactionThermo,
+    class ReactionRate
+>
+void Foam::NonEquilibriumReversibleReaction
+<
+    ReactionType,
+    ReactionThermo,
+    ReactionRate
+>::dcidc
+(
+    const scalar p,
+    const scalar T,
+    const scalarField& c,
+    scalarField& dcidc
+) const
+{
+    fk_.dcidc(p, T, c, dcidc);
+}
+
+
+template
+<
+    template<class> class ReactionType,
+    class ReactionThermo,
+    class ReactionRate
+>
+Foam::scalar Foam::NonEquilibriumReversibleReaction
+<
+    ReactionType,
+    ReactionThermo,
+    ReactionRate
+>::dcidT
+(
+    const scalar p,
+    const scalar T,
+    const scalarField& c
+) const
+{
+    return fk_.dcidT(p, T, c);
 }
 
 

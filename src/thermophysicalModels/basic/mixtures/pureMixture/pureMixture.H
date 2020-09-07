@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -67,11 +67,22 @@ public:
 
     // Constructors
 
-        //- Construct from dictionary and mesh
-        pureMixture(const dictionary&, const fvMesh&);
+        //- Construct from dictionary, mesh and phase name
+        pureMixture(const dictionary&, const fvMesh&, const word&);
 
 
     // Member functions
+
+        //- Return the instantiated type name
+        static word typeName()
+        {
+            return "pureMixture<" + ThermoType::typeName() + '>';
+        }
+
+        const ThermoType& mixture() const
+        {
+            return mixture_;
+        }
 
         const ThermoType& cellMixture(const label) const
         {
@@ -120,7 +131,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 #ifdef NoRepository
-#   include "pureMixture.C"
+    #include "pureMixture.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

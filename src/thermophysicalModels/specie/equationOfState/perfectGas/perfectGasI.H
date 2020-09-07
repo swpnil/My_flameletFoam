@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -48,28 +48,20 @@ inline Foam::perfectGas<Specie>::perfectGas
 
 
 template<class Specie>
-inline Foam::autoPtr<Foam::perfectGas<Specie> >
+inline Foam::autoPtr<Foam::perfectGas<Specie>>
 Foam::perfectGas<Specie>::clone() const
 {
-    return autoPtr<perfectGas<Specie> >(new perfectGas<Specie>(*this));
+    return autoPtr<perfectGas<Specie>>(new perfectGas<Specie>(*this));
 }
 
 
 template<class Specie>
-inline Foam::autoPtr<Foam::perfectGas<Specie> >
-Foam::perfectGas<Specie>::New(Istream& is)
-{
-    return autoPtr<perfectGas<Specie> >(new perfectGas<Specie>(is));
-}
-
-
-template<class Specie>
-inline Foam::autoPtr<Foam::perfectGas<Specie> > Foam::perfectGas<Specie>::New
+inline Foam::autoPtr<Foam::perfectGas<Specie>> Foam::perfectGas<Specie>::New
 (
     const dictionary& dict
 )
 {
-    return autoPtr<perfectGas<Specie> >(new perfectGas<Specie>(dict));
+    return autoPtr<perfectGas<Specie>>(new perfectGas<Specie>(dict));
 }
 
 
@@ -83,23 +75,44 @@ inline Foam::scalar Foam::perfectGas<Specie>::rho(scalar p, scalar T) const
 
 
 template<class Specie>
-inline Foam::scalar Foam::perfectGas<Specie>::psi(scalar, scalar T) const
+inline Foam::scalar Foam::perfectGas<Specie>::H(scalar p, scalar T) const
+{
+    return 0;
+}
+
+
+template<class Specie>
+inline Foam::scalar Foam::perfectGas<Specie>::Cp(scalar p, scalar T) const
+{
+    return 0;
+}
+
+
+template<class Specie>
+inline Foam::scalar Foam::perfectGas<Specie>::S(scalar p, scalar T) const
+{
+    return -this->R()*log(p/Pstd);
+}
+
+
+template<class Specie>
+inline Foam::scalar Foam::perfectGas<Specie>::psi(scalar p, scalar T) const
 {
     return 1.0/(this->R()*T);
 }
 
 
 template<class Specie>
-inline Foam::scalar Foam::perfectGas<Specie>::Z(scalar, scalar) const
+inline Foam::scalar Foam::perfectGas<Specie>::Z(scalar p, scalar T) const
 {
-    return 1.0;
+    return 1;
 }
 
 
 template<class Specie>
-inline Foam::scalar Foam::perfectGas<Specie>::cpMcv(scalar, scalar) const
+inline Foam::scalar Foam::perfectGas<Specie>::CpMCv(scalar p, scalar T) const
 {
-    return this->RR;
+    return this->R();
 }
 
 
@@ -109,13 +122,6 @@ template<class Specie>
 inline void Foam::perfectGas<Specie>::operator+=(const perfectGas<Specie>& pg)
 {
     Specie::operator+=(pg);
-}
-
-
-template<class Specie>
-inline void Foam::perfectGas<Specie>::operator-=(const perfectGas<Specie>& pg)
-{
-    Specie::operator-=(pg);
 }
 
 
@@ -137,23 +143,7 @@ inline Foam::perfectGas<Specie> Foam::operator+
 {
     return perfectGas<Specie>
     (
-        static_cast<const Specie&>(pg1)
-      + static_cast<const Specie&>(pg2)
-    );
-}
-
-
-template<class Specie>
-inline Foam::perfectGas<Specie> Foam::operator-
-(
-    const perfectGas<Specie>& pg1,
-    const perfectGas<Specie>& pg2
-)
-{
-    return perfectGas<Specie>
-    (
-        static_cast<const Specie&>(pg1)
-      - static_cast<const Specie&>(pg2)
+        static_cast<const Specie&>(pg1) + static_cast<const Specie&>(pg2)
     );
 }
 
@@ -176,7 +166,10 @@ inline Foam::perfectGas<Specie> Foam::operator==
     const perfectGas<Specie>& pg2
 )
 {
-    return pg2 - pg1;
+    return perfectGas<Specie>
+    (
+        static_cast<const Specie&>(pg1) == static_cast<const Specie&>(pg2)
+    );
 }
 
 

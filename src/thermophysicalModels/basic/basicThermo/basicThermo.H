@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -65,14 +65,14 @@ protected:
 
         // Fields
 
-        //- Pressure [Pa]
-        volScalarField& p_;
-    
-        //- Temperature [K]
-        volScalarField T_;
+            //- Pressure [Pa]
+            volScalarField& p_;
 
-        //- Laminar thermal diffusuvity [kg/m/s]
-        volScalarField alpha_;
+            //- Temperature [K]
+            volScalarField T_;
+
+            //- Laminar thermal diffusuvity [kg/m/s]
+            volScalarField alpha_;
 
         //- Should the dpdt term be included in the enthalpy equation
         Switch dpdt_;
@@ -134,6 +134,17 @@ public:
 
 
     // Selectors
+
+        //- Generic lookup for thermodynamics package thermoTypeName
+        template<class Thermo, class Table>
+        static typename Table::iterator lookupThermo
+        (
+            const dictionary& thermoTypeDict,
+            Table* tablePtr,
+            const int nCmpt,
+            const char* cmptNames[],
+            const word& thermoTypeName
+        );
 
         //- Generic lookup for each of the related thermodynamics packages
         template<class Thermo, class Table>
@@ -239,6 +250,9 @@ public:
 
         //- Update properties
         virtual void correct() = 0;
+
+        //- Return the name of the thermo physics
+        virtual word thermoName() const = 0;
 
         //- Return true if the equation of state is incompressible
         //  i.e. rho != f(p)
@@ -354,10 +368,10 @@ public:
                 const label patchi
             ) const = 0;
 
-            //- gamma = Cp/Cv []
+            //- Gamma = Cp/Cv []
             virtual tmp<volScalarField> gamma() const = 0;
 
-            //- gamma = Cp/Cv for patch []
+            //- Gamma = Cp/Cv for patch []
             virtual tmp<scalarField> gamma
             (
                 const scalarField& p,
@@ -387,14 +401,14 @@ public:
                 const label patchi
             ) const = 0;
 
+            //- Molecular weight [kg/kmol]
+            virtual tmp<volScalarField> W() const = 0;
+
 
         // Access to transport state variables
 
             //- Thermal diffusivity for enthalpy of mixture [kg/m/s]
             virtual const volScalarField& alpha() const;
-
-            //- Thermal diffusivity for enthalpy of mixture [kg/m/s]
-            virtual volScalarField& alpha(); 
 
             //- Thermal diffusivity for enthalpy of mixture for patch [kg/m/s]
             virtual const scalarField& alpha
@@ -408,21 +422,27 @@ public:
             //- Thermal diffusivity for temperature of mixture [J/m/s/K]
             virtual tmp<volScalarField> kappa() const = 0;
 
-            //- Thermal diffusivity for temperature
-            //  of mixture for patch [J/m/s/K]
+            //- Thermal diffusivity for temperature of mixture
+            //  for patch [J/m/s/K]
             virtual tmp<scalarField> kappa
             (
                 const label patchi
             ) const = 0;
 
-            //- Effective thermal diffusivity for temperature
+            //- Thermal diffusivity for energy of mixture [kg/m/s]
+            virtual tmp<volScalarField> alphahe() const = 0;
+
+            //- Thermal diffusivity for energy of mixture for patch [kg/m/s]
+            virtual tmp<scalarField> alphahe(const label patchi) const = 0;
+
+            //- Effective thermal turbulent diffusivity for temperature
             //  of mixture [J/m/s/K]
             virtual tmp<volScalarField> kappaEff
             (
                 const volScalarField&
             ) const = 0;
 
-            //- Effective thermal diffusivity for temperature
+            //- Effective thermal turbulent diffusivity for temperature
             //  of mixture for patch [J/m/s/K]
             virtual tmp<scalarField> kappaEff
             (
@@ -430,13 +450,14 @@ public:
                 const label patchi
             ) const = 0;
 
-            //- Effective thermal diffusivity of mixture [kg/m/s]
+            //- Effective thermal turbulent diffusivity of mixture [kg/m/s]
             virtual tmp<volScalarField> alphaEff
             (
                 const volScalarField& alphat
             ) const = 0;
 
-            //- Effective thermal diffusivity of mixture for patch [kg/m/s]
+            //- Effective thermal turbulent diffusivity of mixture
+            //  for patch [kg/m/s]
             virtual tmp<scalarField> alphaEff
             (
                 const scalarField& alphat,
@@ -456,7 +477,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-#   include "basicThermoTemplates.C"
+    #include "basicThermoTemplates.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

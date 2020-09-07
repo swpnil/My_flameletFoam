@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2012-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -21,10 +21,6 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-Contributors/Copyright
-    2014 Hagen Müller <hagen.mueller@unibw.de> Universität der Bundeswehr München
-    2014 Likun Ma <L.Ma@tudelft.nl> TU Delft
-
 \*---------------------------------------------------------------------------*/
 
 #include "fluidThermo.H"
@@ -42,47 +38,7 @@ namespace Foam
 
 Foam::fluidThermo::fluidThermo(const fvMesh& mesh, const word& phaseName)
 :
-    basicThermo(mesh, phaseName),
-    
-    Z_
-    (
-        IOobject
-        (
-            "Z",
-            mesh.time().timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    ),
-
-    varZ_
-    (
-        IOobject
-        (
-            "varZ",
-            mesh.time().timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    ),
-
-    Chi_
-    (
-        IOobject
-        (
-            phasePropertyName("chi"),
-            mesh.time().timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    )
-
+    basicThermo(mesh, phaseName)
 {}
 
 
@@ -94,48 +50,7 @@ Foam::fluidThermo::fluidThermo
     const word& phaseName
 )
 :
-    basicThermo(mesh, dict, phaseName),
-
-    
-    Z_
-    (
-        IOobject
-        (
-            phasePropertyName("Z"),
-            mesh.time().timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    ),
-
-    varZ_
-    (
-        IOobject
-        (
-            phasePropertyName("varZ"),
-            mesh.time().timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    ),
-
-    Chi_
-    (
-        IOobject
-        (
-            phasePropertyName("chi"),
-            mesh.time().timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    )
-
+    basicThermo(mesh, dict, phaseName)
 {}
 
 
@@ -169,39 +84,6 @@ Foam::tmp<Foam::scalarField> Foam::fluidThermo::nu(const label patchi) const
 {
     return mu(patchi)/rho(patchi);
 }
-
-
-Foam::volScalarField& Foam::fluidThermo::Z()
-{
-    return Z_;
-}
-
-const Foam::volScalarField& Foam::fluidThermo::Z() const
-{
-    return Z_;
-}
-
-Foam::volScalarField& Foam::fluidThermo::varZ()
-{
-    return varZ_;
-}
-
-
-const Foam::volScalarField& Foam::fluidThermo::varZ() const
-{
-    return varZ_;
-}
-
-Foam::volScalarField& Foam::fluidThermo::Chi()
-{
-    return Chi_;
-}
-
-const Foam::volScalarField& Foam::fluidThermo::Chi() const
-{
-    return Chi_;
-}
-
 
 
 // ************************************************************************* //

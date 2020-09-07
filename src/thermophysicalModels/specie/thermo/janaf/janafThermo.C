@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -33,21 +33,21 @@ void Foam::janafThermo<EquationOfState>::checkInputData() const
 {
     if (Tlow_ >= Thigh_)
     {
-        FatalErrorIn("janafThermo<EquationOfState>::check()")
+        FatalErrorInFunction
             << "Tlow(" << Tlow_ << ") >= Thigh(" << Thigh_ << ')'
             << exit(FatalError);
     }
 
     if (Tcommon_ <= Tlow_)
     {
-        FatalErrorIn("janafThermo<EquationOfState>::check()")
+        FatalErrorInFunction
             << "Tcommon(" << Tcommon_ << ") <= Tlow(" << Tlow_ << ')'
             << exit(FatalError);
     }
 
     if (Tcommon_ > Thigh_)
     {
-        FatalErrorIn("janafThermo<EquationOfState>::check()")
+        FatalErrorInFunction
             << "Tcommon(" << Tcommon_ << ") > Thigh(" << Thigh_ << ')'
             << exit(FatalError);
     }
@@ -55,31 +55,6 @@ void Foam::janafThermo<EquationOfState>::checkInputData() const
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-
-template<class EquationOfState>
-Foam::janafThermo<EquationOfState>::janafThermo(Istream& is)
-:
-    EquationOfState(is),
-    Tlow_(readScalar(is)),
-    Thigh_(readScalar(is)),
-    Tcommon_(readScalar(is))
-{
-    checkInputData();
-
-    forAll(highCpCoeffs_, i)
-    {
-        is >> highCpCoeffs_[i];
-    }
-
-    forAll(lowCpCoeffs_, i)
-    {
-        is >> lowCpCoeffs_[i];
-    }
-
-    // Check state of Istream
-    is.check("janafThermo::janafThermo(Istream& is)");
-}
-
 
 template<class EquationOfState>
 Foam::janafThermo<EquationOfState>::janafThermo(const dictionary& dict)
@@ -91,6 +66,13 @@ Foam::janafThermo<EquationOfState>::janafThermo(const dictionary& dict)
     highCpCoeffs_(dict.subDict("thermodynamics").lookup("highCpCoeffs")),
     lowCpCoeffs_(dict.subDict("thermodynamics").lookup("lowCpCoeffs"))
 {
+    // Convert coefficients to mass-basis
+    for (label coefLabel=0; coefLabel<nCoeffs_; coefLabel++)
+    {
+        highCpCoeffs_[coefLabel] *= this->R();
+        lowCpCoeffs_[coefLabel] *= this->R();
+    }
+
     checkInputData();
 }
 
@@ -102,12 +84,21 @@ void Foam::janafThermo<EquationOfState>::write(Ostream& os) const
 {
     EquationOfState::write(os);
 
+    // Convert coefficients back to dimensionless form
+    coeffArray highCpCoeffs;
+    coeffArray lowCpCoeffs;
+    for (label coefLabel=0; coefLabel<nCoeffs_; coefLabel++)
+    {
+        highCpCoeffs[coefLabel] = highCpCoeffs_[coefLabel]/this->R();
+        lowCpCoeffs[coefLabel] = lowCpCoeffs_[coefLabel]/this->R();
+    }
+
     dictionary dict("thermodynamics");
     dict.add("Tlow", Tlow_);
     dict.add("Thigh", Thigh_);
     dict.add("Tcommon", Tcommon_);
-    dict.add("highCpCoeffs", highCpCoeffs_);
-    dict.add("lowCpCoeffs", lowCpCoeffs_);
+    dict.add("highCpCoeffs", highCpCoeffs);
+    dict.add("lowCpCoeffs", lowCpCoeffs);
     os  << indent << dict.dictName() << dict;
 }
 
@@ -121,32 +112,7 @@ Foam::Ostream& Foam::operator<<
     const janafThermo<EquationOfState>& jt
 )
 {
-    os  << static_cast<const EquationOfState&>(jt) << nl
-        << "    " << jt.Tlow_
-        << tab << jt.Thigh_
-        << tab << jt.Tcommon_;
-
-    os << nl << "    ";
-
-    forAll(jt.highCpCoeffs_, i)
-    {
-        os << jt.highCpCoeffs_[i] << ' ';
-    }
-
-    os << nl << "    ";
-
-    forAll(jt.lowCpCoeffs_, i)
-    {
-        os << jt.lowCpCoeffs_[i] << ' ';
-    }
-
-    os << endl;
-
-    os.check
-    (
-        "operator<<(Ostream& os, const janafThermo<EquationOfState>& jt)"
-    );
-
+    jt.write(os);
     return os;
 }
 

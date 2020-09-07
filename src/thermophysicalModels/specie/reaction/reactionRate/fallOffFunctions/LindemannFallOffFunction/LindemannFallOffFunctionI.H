@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -29,10 +29,6 @@ inline Foam::LindemannFallOffFunction::LindemannFallOffFunction()
 {}
 
 
-inline Foam::LindemannFallOffFunction::LindemannFallOffFunction(Istream&)
-{}
-
-
 inline Foam::LindemannFallOffFunction::LindemannFallOffFunction
 (
     const dictionary& dict
@@ -49,6 +45,30 @@ inline Foam::scalar Foam::LindemannFallOffFunction::operator()
 ) const
 {
     return 1.0;
+}
+
+
+inline Foam::scalar Foam::LindemannFallOffFunction::ddT
+(
+    const scalar,
+    const scalar,
+    const scalar,
+    const scalar
+) const
+{
+    return 0;
+}
+
+
+inline Foam::scalar Foam::LindemannFallOffFunction::ddc
+(
+    const scalar,
+    const scalar,
+    const scalar,
+    const scalar
+) const
+{
+    return 0;
 }
 
 

@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -103,14 +103,6 @@ public:
             const speciesTable& species
         );
 
-        //- Construct from Istream
-        ReversibleReaction
-        (
-            const speciesTable& species,
-            const HashPtrTable<ReactionThermo>& thermoDatabase,
-            Istream& is
-        );
-
         //- Construct from dictionary
         ReversibleReaction
         (
@@ -120,9 +112,9 @@ public:
         );
 
         //- Construct and return a clone
-        virtual autoPtr<ReactionType<ReactionThermo> > clone() const
+        virtual autoPtr<ReactionType<ReactionThermo>> clone() const
         {
-            return autoPtr<ReactionType<ReactionThermo> >
+            return autoPtr<ReactionType<ReactionThermo>>
             (
                 new ReversibleReaction
                 <
@@ -134,12 +126,12 @@ public:
         }
 
         //- Construct and return a clone with new speciesTable
-        virtual autoPtr<ReactionType<ReactionThermo> > clone
+        virtual autoPtr<ReactionType<ReactionThermo>> clone
         (
             const speciesTable& species
         ) const
         {
-            return autoPtr<ReactionType<ReactionThermo> >
+            return autoPtr<ReactionType<ReactionThermo>>
             (
                 new ReversibleReaction
                 <ReactionType, ReactionThermo, ReactionRate>
@@ -188,6 +180,51 @@ public:
             ) const;
 
 
+        // ReversibleReaction Jacobian functions
+
+            //- Temperature derivative of forward rate
+            virtual scalar dkfdT
+            (
+                const scalar p,
+                const scalar T,
+                const scalarField& c
+            ) const;
+
+            //- Temperature derivative of backward rate
+            virtual scalar dkrdT
+            (
+                const scalar p,
+                const scalar T,
+                const scalarField& c,
+                const scalar dkfdT,
+                const scalar kr
+            ) const;
+
+            //- Third-body efficiencies (beta = 1-alpha)
+            //  non-empty only for third-body reactions
+            //  with enhanced molecularity (alpha != 1)
+            virtual const List<Tuple2<label, scalar>>& beta() const;
+
+            //- Species concentration derivative of the pressure dependent term
+            //  By default this value is 1 as it multiplies the third-body term
+            virtual void dcidc
+            (
+                const scalar p,
+                const scalar T,
+                const scalarField& c,
+                scalarField& dcidc
+            ) const;
+
+            //- Temperature derivative of the pressure dependent term
+            //  By default this value is 0 since ddT of molecularity is approx.0
+            virtual scalar dcidT
+            (
+                const scalar p,
+                const scalar T,
+                const scalarField& c
+            ) const;
+
+
         //- Write
         virtual void write(Ostream&) const;
 };
@@ -200,7 +237,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-#   include "ReversibleReaction.C"
+    #include "ReversibleReaction.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

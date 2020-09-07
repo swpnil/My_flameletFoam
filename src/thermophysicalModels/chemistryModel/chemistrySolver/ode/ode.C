@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -24,17 +24,13 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "ode.H"
-#include "chemistryModel.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class ChemistryModel>
-Foam::ode<ChemistryModel>::ode
-(
-    const fvMesh& mesh
-)
+Foam::ode<ChemistryModel>::ode(typename ChemistryModel::reactionThermo& thermo)
 :
-    chemistrySolver<ChemistryModel>(mesh),
+    chemistrySolver<ChemistryModel>(thermo),
     coeffsDict_(this->subDict("odeCoeffs")),
     odeSolver_(ODESolver::New(*this, coeffsDict_)),
     cTp_(this->nEqns())
@@ -60,10 +56,17 @@ void Foam::ode<ChemistryModel>::solve
     scalar& subDeltaT
 ) const
 {
-    label nSpecie = this->nSpecie();
+    // Reset the size of the ODE system to the simplified size when mechanism
+    // reduction is active
+    if (odeSolver_->resize())
+    {
+        odeSolver_->resizeField(cTp_);
+    }
+
+    const label nSpecie = this->nSpecie();
 
     // Copy the concentration, T and P to the total solve-vector
-    for (register int i=0; i<nSpecie; i++)
+    for (int i=0; i<nSpecie; i++)
     {
         cTp_[i] = c[i];
     }
@@ -72,7 +75,7 @@ void Foam::ode<ChemistryModel>::solve
 
     odeSolver_->solve(0, deltaT, cTp_, subDeltaT);
 
-    for (register int i=0; i<nSpecie; i++)
+    for (int i=0; i<nSpecie; i++)
     {
         c[i] = max(0.0, cTp_[i]);
     }

@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -55,23 +55,9 @@ inline constTransport<Thermo> operator+
 );
 
 template<class Thermo>
-inline constTransport<Thermo> operator-
-(
-    const constTransport<Thermo>&,
-    const constTransport<Thermo>&
-);
-
-template<class Thermo>
 inline constTransport<Thermo> operator*
 (
     const scalar,
-    const constTransport<Thermo>&
-);
-
-template<class Thermo>
-inline constTransport<Thermo> operator==
-(
-    const constTransport<Thermo>&,
     const constTransport<Thermo>&
 );
 
@@ -119,17 +105,11 @@ public:
         //- Construct as named copy
         inline constTransport(const word&, const constTransport&);
 
-        //- Construct from Istream
-        constTransport(Istream&);
-
         //- Construct from dictionary
         constTransport(const dictionary& dict);
 
         //- Construct and return a clone
         inline autoPtr<constTransport> clone() const;
-
-        // Selector from Istream
-        inline static autoPtr<constTransport> New(Istream& is);
 
         // Selector from dictionary
         inline static autoPtr<constTransport> New(const dictionary& dict);
@@ -153,7 +133,7 @@ public:
         inline scalar alphah(const scalar p, const scalar T) const;
 
         // Species diffusivity
-        //inline scalar D(const scalar p, const scalar T) const;
+        // inline scalar D(const scalar p, const scalar T) const;
 
         //- Write to Ostream
         void write(Ostream& os) const;
@@ -161,11 +141,9 @@ public:
 
     // Member operators
 
-        inline constTransport& operator=(const constTransport&);
+        inline void operator=(const constTransport&);
 
         inline void operator+=(const constTransport&);
-
-        inline void operator-=(const constTransport&);
 
         inline void operator*=(const scalar);
 
@@ -178,21 +156,9 @@ public:
             const constTransport&
         );
 
-        friend constTransport operator- <Thermo>
-        (
-            const constTransport&,
-            const constTransport&
-        );
-
         friend constTransport operator* <Thermo>
         (
             const scalar,
-            const constTransport&
-        );
-
-        friend constTransport operator== <Thermo>
-        (
-            const constTransport&,
             const constTransport&
         );
 
@@ -216,7 +182,7 @@ public:
 #include "constTransportI.H"
 
 #ifdef NoRepository
-#   include "constTransport.C"
+    #include "constTransport.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

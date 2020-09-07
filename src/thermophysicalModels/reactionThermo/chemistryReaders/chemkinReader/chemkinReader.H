@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -46,7 +46,6 @@ SourceFiles
 #include "labelList.H"
 #include "speciesTable.H"
 #include "atomicWeights.H"
-
 #include "reactionTypes.H"
 
 #include <FlexLexer.h>
@@ -75,33 +74,6 @@ public:
             solid,
             liquid,
             gas
-        };
-
-        //- species element
-        struct specieElement
-        {
-            word elementName;
-            label nAtoms;
-
-            bool operator==(const specieElement& se) const
-            {
-                return
-                (
-                    nAtoms == se.nAtoms
-                 && elementName == se.elementName
-                );
-            }
-
-            bool operator!=(const specieElement& se) const
-            {
-                return !operator==(se);
-            }
-
-            friend Ostream& operator<<(Ostream& os, const specieElement& se)
-            {
-                os  << se.nAtoms << token::SPACE << se.elementName;
-                return os;
-            }
         };
 
 
@@ -203,13 +175,19 @@ private:
         HashPtrTable<gasHThermoPhysics> speciesThermo_;
 
         //- Table of species composition
-        HashTable<List<specieElement> > specieComposition_;
+        speciesCompositionTable speciesComposition_;
 
         //- List of the reactions
         ReactionList<gasHThermoPhysics> reactions_;
 
+        //- Transport properties dictionary
+        dictionary transportDict_;
+
         //- Flag to indicate that file is in new format
         Switch newFormat_;
+
+        //- Tolerance for element imbalance in a reaction
+        scalar imbalanceTol_;
 
 
     // Private Member Functions
@@ -299,9 +277,9 @@ private:
         void read
         (
             const fileName& CHEMKINFileName,
-            const fileName& thermoFileName
+            const fileName& thermoFileName,
+            const fileName& transportFileName
         );
-
 
         //- Disallow default bitwise copy construct
         chemkinReader(const chemkinReader&);
@@ -321,8 +299,9 @@ public:
         //- Construct from CHEMKIN III file name
         chemkinReader
         (
-            const fileName& chemkinFile,
             speciesTable& species,
+            const fileName& CHEMKINFileName,
+            const fileName& transportFileName,
             const fileName& thermoFileName = fileName::null,
             const bool newFormat = false
         );
@@ -362,6 +341,12 @@ public:
             return speciesTable_;
         }
 
+        //- Table of species composition
+        const speciesCompositionTable& specieComposition() const
+        {
+            return speciesComposition_;
+        }
+
         //- Specie phase
         const HashTable<phase>& speciePhase() const
         {
@@ -372,12 +357,6 @@ public:
         const HashPtrTable<gasHThermoPhysics>& speciesThermo() const
         {
             return speciesThermo_;
-        }
-
-        //- Table of species composition
-        const HashTable<List<specieElement> >& specieComposition() const
-        {
-            return specieComposition_;
         }
 
         //- List of the reactions

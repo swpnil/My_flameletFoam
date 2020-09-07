@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -30,17 +30,13 @@ Description
 SourceFiles
     SpecieMixture.C
 
-Contributors/Copyright
-    2014 Hagen Müller <hagen.mueller@unibw.de> Universität der Bundeswehr München
-    2014 Likun Ma <L.Ma@tudelft.nl> TU Delft
-
-
 \*---------------------------------------------------------------------------*/
 
 #ifndef SpecieMixture_H
 #define SpecieMixture_H
 
 #include "scalar.H"
+#include "volFields.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -66,8 +62,8 @@ public:
 
     // Constructors
 
-        //- Construct from dictionary and mesh
-        SpecieMixture(const dictionary&, const fvMesh&);
+        //- Construct from dictionary, mesh and phase name
+        SpecieMixture(const dictionary&, const fvMesh&, const word& phaseName);
 
 
     //- Destructor
@@ -79,10 +75,7 @@ public:
 
         // Per specie properties
 
-            //- Number of moles []
-            virtual scalar nMoles(const label speciei) const;
-
-            //- Molecular weight [kg/kmol]
+            //- Molecular weight of the given specie [kg/kmol]
             virtual scalar W(const label speciei) const;
 
 
@@ -185,10 +178,50 @@ public:
             //- Density [kg/m3]
             virtual scalar rho
             (
-                const label specieI,
+                const label speciei,
                 const scalar p,
                 const scalar T
             ) const;
+
+
+        // Field properties abstract functions
+        // provided here to avoid issues with inheritance of virtual functions
+        // in heThermo
+
+            //- Heat capacity at constant pressure for patch [J/kg/K]
+            virtual tmp<scalarField> Cp
+            (
+                const scalarField& p,
+                const scalarField& T,
+                const label patchi
+            ) const = 0;
+
+            //- Heat capacity at constant pressure for patch [J/kg/K]
+            virtual tmp<volScalarField> Cp() const = 0;
+
+            //- Heat capacity at constant volume for patch [J/kg/K]
+            virtual tmp<scalarField> Cv
+            (
+                const scalarField& p,
+                const scalarField& T,
+                const label patchi
+            ) const = 0;
+
+            //- Heat capacity at constant volume [J/kg/K]
+            virtual tmp<volScalarField> Cv() const = 0;
+
+            //- Molecular weight of the given specie [kg/kmol]
+            virtual tmp<volScalarField> W() const = 0;
+
+            //- Thermal diffusivity for temperature
+            //  of mixture for patch [J/m/s/K]
+            virtual tmp<scalarField> kappa
+            (
+                const label patchi
+            ) const = 0;
+
+            //- Thermal diffusivity for temperature of mixture [J/m/s/K]
+            virtual tmp<volScalarField> kappa() const = 0;
 };
 
 
@@ -199,7 +232,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 #ifdef NoRepository
-#   include "SpecieMixture.C"
+    #include "SpecieMixture.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

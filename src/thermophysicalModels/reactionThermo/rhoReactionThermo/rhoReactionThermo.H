@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -30,17 +30,13 @@ Description
 SourceFiles
     rhoReactionThermo.C
 
-Contributors/Copyright
-    2014 Hagen Müller <hagen.mueller@unibw.de> Universität der Bundeswehr München
-    2014 Likun Ma <L.Ma@tudelft.nl> TU Delft
-
 \*---------------------------------------------------------------------------*/
 
 #ifndef rhoReactionThermo_H
 #define rhoReactionThermo_H
 
 #include "rhoThermo.H"
-#include "basicMultiComponentMixture.H"
+#include "basicSpecieMixture.H"
 #include "autoPtr.H"
 #include "runTimeSelectionTables.H"
 
@@ -102,10 +98,10 @@ public:
     // Member functions
 
         //- Return the composition of the multi-component mixture
-        virtual basicMultiComponentMixture& composition() = 0;
+        virtual basicSpecieMixture& composition() = 0;
 
         //- Return the composition of the multi-component mixture
-        virtual const basicMultiComponentMixture& composition() const = 0;
+        virtual const basicSpecieMixture& composition() const = 0;
 };
 
 

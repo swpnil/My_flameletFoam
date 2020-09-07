@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -100,7 +100,7 @@ void Foam::fixedUnburntEnthalpyFvPatchScalarField::updateCoeffs()
 
     const psiuReactionThermo& thermo = db().lookupObject<psiuReactionThermo>
     (
-        "thermophysicalProperties"
+        basicThermo::dictName
     );
 
     const label patchi = patch().index();

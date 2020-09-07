@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -42,18 +42,6 @@ inline Foam::SRIFallOffFunction::SRIFallOffFunction
 {}
 
 
-inline Foam::SRIFallOffFunction::SRIFallOffFunction(Istream& is)
-:
-    a_(readScalar(is.readBegin("SRIFallOffFunction(Istream&)"))),
-    b_(readScalar(is)),
-    c_(readScalar(is)),
-    d_(readScalar(is)),
-    e_(readScalar(is))
-{
-    is.readEnd("SRIFallOffFunction(Istream&)");
-}
-
-
 inline Foam::SRIFallOffFunction::SRIFallOffFunction(const dictionary& dict)
 :
     a_(readScalar(dict.lookup("a"))),
@@ -72,8 +60,45 @@ inline Foam::scalar Foam::SRIFallOffFunction::operator()
     const scalar Pr
 ) const
 {
-    scalar X = 1.0/(1.0 + sqr(log10(max(Pr, SMALL))));
+    scalar X = 1.0/(1 + sqr(log10(max(Pr, small))));
     return d_*pow(a_*exp(-b_/T) + exp(-T/c_), X)*pow(T, e_);
+}
+
+
+inline Foam::scalar Foam::SRIFallOffFunction::ddT
+(
+    const scalar Pr,
+    const scalar F,
+    const scalar dPrdT,
+    const scalar T
+) const
+{
+    scalar X = 1.0/(1 + sqr(log10(max(Pr, small))));
+    scalar dXdPr = -X*X*2*log10(Pr)/Pr/log(10.0);
+    return
+        F
+       *(
+            e_/T
+          + X
+           *(a_*b_*exp(-b_/T)/sqr(T) - exp(-T/c_)/c_)
+           /(a_*exp(-b_/T) + exp(-T/c_))
+          + dXdPr*dPrdT*log(a_*exp(-b_/T) + exp(-T/c_))
+        );
+}
+
+
+inline Foam::scalar Foam::SRIFallOffFunction::ddc
+(
+    const scalar Pr,
+    const scalar F,
+    const scalar dPrdc,
+    const scalar T
+) const
+{
+    scalar X = 1.0/(1 + sqr(log10(max(Pr, small))));
+    scalar dXdPr = -X*X*2*log10(Pr)/Pr/log(10.0);
+    scalar dXdc = dXdPr*dPrdc;
+    return F*dXdc*log(a_*exp(-b_/T) + exp(-T/c_));
 }
 
 
@@ -95,14 +120,7 @@ inline Foam::Ostream& Foam::operator<<
     const Foam::SRIFallOffFunction& srifof
 )
 {
-    os  << token::BEGIN_LIST
-        << srifof.a_
-        << token::SPACE << srifof.b_
-        << token::SPACE << srifof.c_
-        << token::SPACE << srifof.d_
-        << token::SPACE << srifof.e_
-        << token::END_LIST;
-
+    srifof.write(os);
     return os;
 }
 

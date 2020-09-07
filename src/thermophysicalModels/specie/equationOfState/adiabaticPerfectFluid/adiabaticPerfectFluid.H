@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -25,7 +25,7 @@ Class
     Foam::adiabaticPerfectFluid
 
 Description
-    AdiabaticPerfect gas equation of state.
+    Adiabatic perfect fluid equation of state.
 
 SourceFiles
     adiabaticPerfectFluidI.H
@@ -49,13 +49,6 @@ template<class Specie> class adiabaticPerfectFluid;
 
 template<class Specie>
 inline adiabaticPerfectFluid<Specie> operator+
-(
-    const adiabaticPerfectFluid<Specie>&,
-    const adiabaticPerfectFluid<Specie>&
-);
-
-template<class Specie>
-inline adiabaticPerfectFluid<Specie> operator-
 (
     const adiabaticPerfectFluid<Specie>&,
     const adiabaticPerfectFluid<Specie>&
@@ -121,9 +114,6 @@ public:
             const scalar B
         );
 
-        //- Construct from Istream
-        adiabaticPerfectFluid(Istream&);
-
         //- Construct from dictionary
         adiabaticPerfectFluid(const dictionary& dict);
 
@@ -136,9 +126,6 @@ public:
 
         //- Construct and return a clone
         inline autoPtr<adiabaticPerfectFluid> clone() const;
-
-        // Selector from Istream
-        inline static autoPtr<adiabaticPerfectFluid> New(Istream& is);
 
         // Selector from dictionary
         inline static autoPtr<adiabaticPerfectFluid> New
@@ -167,14 +154,23 @@ public:
             //- Return density [kg/m^3]
             inline scalar rho(scalar p, scalar T) const;
 
+            //- Return enthalpy departure [J/kg]
+            inline scalar H(const scalar p, const scalar T) const;
+
+            //- Return Cp departure [J/(kg K]
+            inline scalar Cp(scalar p, scalar T) const;
+
+            //- Return entropy [J/(kg K)]
+            inline scalar S(const scalar p, const scalar T) const;
+
             //- Return compressibility rho/p [s^2/m^2]
             inline scalar psi(scalar p, scalar T) const;
 
             //- Return compression factor []
             inline scalar Z(scalar p, scalar T) const;
 
-            //- Return (cp - cv) [J/(kmol K]
-            inline scalar cpMcv(scalar p, scalar T) const;
+            //- Return (Cp - Cv) [J/(kg K]
+            inline scalar CpMCv(scalar p, scalar T) const;
 
 
         // IO
@@ -186,20 +182,12 @@ public:
     // Member operators
 
         inline void operator+=(const adiabaticPerfectFluid&);
-        inline void operator-=(const adiabaticPerfectFluid&);
-
         inline void operator*=(const scalar);
 
 
     // Friend operators
 
         friend adiabaticPerfectFluid operator+ <Specie>
-        (
-            const adiabaticPerfectFluid&,
-            const adiabaticPerfectFluid&
-        );
-
-        friend adiabaticPerfectFluid operator- <Specie>
         (
             const adiabaticPerfectFluid&,
             const adiabaticPerfectFluid&
@@ -237,7 +225,7 @@ public:
 #include "adiabaticPerfectFluidI.H"
 
 #ifdef NoRepository
-#   include "adiabaticPerfectFluid.C"
+    #include "adiabaticPerfectFluid.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

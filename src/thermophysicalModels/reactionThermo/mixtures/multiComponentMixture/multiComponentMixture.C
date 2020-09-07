@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -20,10 +20,6 @@ License
 
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
-
-Contributors/Copyright
-    2014 Hagen Müller <hagen.mueller@unibw.de> Universität der Bundeswehr München
-    2014 Likun Ma <L.Ma@tudelft.nl> TU Delft
 
 \*---------------------------------------------------------------------------*/
 
@@ -61,15 +57,16 @@ void Foam::multiComponentMixture<ThermoType>::correctMassFractions()
         Yt += Y_[n];
     }
 
-    if (mag(max(Yt).value()) < ROOTVSMALL)
+    if (mag(max(Yt).value()) < rootVSmall)
     {
-        FatalErrorIn
-        (
-            "void Foam::multiComponentMixture<ThermoType>::"
-            "correctMassFractions()"
-        )
+        FatalErrorInFunction
             << "Sum of mass fractions is zero for species " << this->species()
             << exit(FatalError);
+    }
+
+    forAll(Y_, n)
+    {
+        Y_[n] /= Yt;
     }
 }
 
@@ -82,10 +79,11 @@ Foam::multiComponentMixture<ThermoType>::multiComponentMixture
     const dictionary& thermoDict,
     const wordList& specieNames,
     const HashPtrTable<ThermoType>& thermoData,
-    const fvMesh& mesh
+    const fvMesh& mesh,
+    const word& phaseName
 )
 :
-    basicMultiComponentMixture(thermoDict, specieNames, mesh),
+    basicSpecieMixture(thermoDict, specieNames, mesh, phaseName),
     speciesData_(species_.size()),
     mixture_("mixture", *thermoData[specieNames[0]]),
     mixtureVol_("volMixture", *thermoData[specieNames[0]])
@@ -98,6 +96,8 @@ Foam::multiComponentMixture<ThermoType>::multiComponentMixture
             new ThermoType(*thermoData[species_[i]])
         );
     }
+
+    correctMassFractions();
 }
 
 
@@ -105,14 +105,24 @@ template<class ThermoType>
 Foam::multiComponentMixture<ThermoType>::multiComponentMixture
 (
     const dictionary& thermoDict,
-    const fvMesh& mesh
+    const fvMesh& mesh,
+    const word& phaseName
 )
 :
-    basicMultiComponentMixture(thermoDict, thermoDict.lookup("species"), mesh),
+    basicSpecieMixture
+    (
+        thermoDict,
+        thermoDict.lookup("species"),
+        mesh,
+        phaseName
+    ),
     speciesData_(species_.size()),
     mixture_("mixture", constructSpeciesData(thermoDict)),
     mixtureVol_("volMixture", speciesData_[0])
-{}
+{
+    correctMassFractions();
+}
+
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
@@ -122,12 +132,14 @@ const ThermoType& Foam::multiComponentMixture<ThermoType>::cellMixture
     const label celli
 ) const
 {
-    mixture_ = Y_[0][celli]/speciesData_[0].W()*speciesData_[0];  
+    mixture_ = Y_[0][celli]*speciesData_[0];
+
     for (label n=1; n<Y_.size(); n++)
-    {       
-        mixture_ += Y_[n][celli]/speciesData_[n].W()*speciesData_[n];
+    {
+        mixture_ += Y_[n][celli]*speciesData_[n];
     }
-    return mixture_; 
+
+    return mixture_;
 }
 
 
@@ -138,15 +150,11 @@ const ThermoType& Foam::multiComponentMixture<ThermoType>::patchFaceMixture
     const label facei
 ) const
 {
-    mixture_ =
-        Y_[0].boundaryField()[patchi][facei]
-       /speciesData_[0].W()*speciesData_[0];
+    mixture_ = Y_[0].boundaryField()[patchi][facei]*speciesData_[0];
 
     for (label n=1; n<Y_.size(); n++)
     {
-        mixture_ +=
-            Y_[n].boundaryField()[patchi][facei]
-           /speciesData_[n].W()*speciesData_[n];
+        mixture_ += Y_[n].boundaryField()[patchi][facei]*speciesData_[n];
     }
 
     return mixture_;

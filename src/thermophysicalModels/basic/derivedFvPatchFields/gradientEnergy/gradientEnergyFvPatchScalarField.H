@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -24,9 +24,6 @@ License
 Class
     Foam::gradientEnergyFvPatchScalarField
 
-Group
-    grpThermoBoundaryConditions
-
 Description
     This boundary condition provides a gradient condition for internal energy,
     where the gradient is calculated using:
@@ -45,18 +42,17 @@ Description
         \Delta  | distance between patch face and internal cell centres [m]
     \endvartable
 
-    \heading Patch usage
-
+Usage
     Example of the boundary condition specification:
     \verbatim
-    myPatch
+    <patchName>
     {
         type            gradientEnergy;
         gradient        uniform 10;
     }
     \endverbatim
 
-SeeAlso
+See also
     Foam::fixedGradientFvPatchField
 
 SourceFiles

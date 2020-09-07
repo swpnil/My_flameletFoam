@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -26,6 +26,7 @@ License
 #include "chemkinReader.H"
 #include <fstream>
 #include "atomicWeights.H"
+#include "ReactionProxy.H"
 #include "IrreversibleReaction.H"
 #include "ReversibleReaction.H"
 #include "NonEquilibriumReversibleReaction.H"
@@ -119,8 +120,8 @@ Foam::scalar Foam::chemkinReader::molecularWeight
 
     forAll(specieComposition, i)
     {
-        label nAtoms = specieComposition[i].nAtoms;
-        const word& elementName = specieComposition[i].elementName;
+        label nAtoms = specieComposition[i].nAtoms();
+        const word& elementName = specieComposition[i].name();
 
         if (isotopeAtomicWts_.found(elementName))
         {
@@ -132,7 +133,7 @@ Foam::scalar Foam::chemkinReader::molecularWeight
         }
         else
         {
-            FatalErrorIn("chemkinReader::lex()")
+            FatalErrorInFunction
                 << "Unknown element " << elementName
                 << " on line " << lineNo_-1 << nl
                 << "    specieComposition: " << specieComposition
@@ -153,7 +154,7 @@ void Foam::chemkinReader::checkCoeffs
 {
     if (reactionCoeffs.size() != nCoeffs)
     {
-        FatalErrorIn("chemkinReader::checkCoeffs")
+        FatalErrorInFunction
             << "Wrong number of coefficients for the " << reactionRateName
             << " rate expression on line "
             << lineNo_-1 << ", should be "
@@ -182,7 +183,7 @@ void Foam::chemkinReader::addReactionType
                 new IrreversibleReaction
                 <Reaction, gasHThermoPhysics, ReactionRateType>
                 (
-                    Reaction<gasHThermoPhysics>
+                    ReactionProxy<gasHThermoPhysics>
                     (
                         speciesTable_,
                         lhs.shrink(),
@@ -202,7 +203,7 @@ void Foam::chemkinReader::addReactionType
                 new ReversibleReaction
                 <Reaction, gasHThermoPhysics, ReactionRateType>
                 (
-                    Reaction<gasHThermoPhysics>
+                    ReactionProxy<gasHThermoPhysics>
                     (
                         speciesTable_,
                         lhs.shrink(),
@@ -219,7 +220,7 @@ void Foam::chemkinReader::addReactionType
 
             if (rType < 3)
             {
-                FatalErrorIn("chemkinReader::addReactionType")
+                FatalErrorInFunction
                     << "Reaction type " << reactionTypeNames[rType]
                     << " on line " << lineNo_-1
                     << " not handled by this function"
@@ -227,7 +228,7 @@ void Foam::chemkinReader::addReactionType
             }
             else
             {
-                FatalErrorIn("chemkinReader::addReactionType")
+                FatalErrorInFunction
                     << "Unknown reaction type " << rType
                     << " on line " << lineNo_-1
                     << exit(FatalError);
@@ -292,7 +293,7 @@ void Foam::chemkinReader::addPressureDependentReaction
 
             if (TroeCoeffs.size() != 4 && TroeCoeffs.size() != 3)
             {
-                FatalErrorIn("chemkinReader::addPressureDependentReaction")
+                FatalErrorInFunction
                     << "Wrong number of coefficients for Troe rate expression"
                        " on line " << lineNo_-1 << ", should be 3 or 4 but "
                     << TroeCoeffs.size() << " supplied." << nl
@@ -304,7 +305,7 @@ void Foam::chemkinReader::addPressureDependentReaction
             if (TroeCoeffs.size() == 3)
             {
                 TroeCoeffs.setSize(4);
-                TroeCoeffs[3] = GREAT;
+                TroeCoeffs[3] = great;
             }
 
             addReactionType
@@ -347,7 +348,7 @@ void Foam::chemkinReader::addPressureDependentReaction
 
             if (SRICoeffs.size() != 5 && SRICoeffs.size() != 3)
             {
-                FatalErrorIn("chemkinReader::addPressureDependentReaction")
+                FatalErrorInFunction
                     << "Wrong number of coefficients for SRI rate expression"
                        " on line " << lineNo_-1 << ", should be 3 or 5 but "
                     << SRICoeffs.size() << " supplied." << nl
@@ -397,7 +398,7 @@ void Foam::chemkinReader::addPressureDependentReaction
         }
         default:
         {
-            FatalErrorIn("chemkinReader::addPressureDependentReaction")
+            FatalErrorInFunction
                 << "Fall-off function type "
                 << fallOffFunctionNames[fofType]
                 << " on line " << lineNo_-1
@@ -428,24 +429,26 @@ void Foam::chemkinReader::addReaction
     forAll(lhs, i)
     {
         const List<specieElement>& specieComposition =
-            specieComposition_[speciesTable_[lhs[i].index]];
+            speciesComposition_[speciesTable_[lhs[i].index]];
 
         forAll(specieComposition, j)
         {
-            label elementi = elementIndices_[specieComposition[j].elementName];
-            nAtoms[elementi] += lhs[i].stoichCoeff*specieComposition[j].nAtoms;
+            label elementi = elementIndices_[specieComposition[j].name()];
+            nAtoms[elementi] +=
+                lhs[i].stoichCoeff*specieComposition[j].nAtoms();
         }
     }
 
     forAll(rhs, i)
     {
         const List<specieElement>& specieComposition =
-            specieComposition_[speciesTable_[rhs[i].index]];
+            speciesComposition_[speciesTable_[rhs[i].index]];
 
         forAll(specieComposition, j)
         {
-            label elementi = elementIndices_[specieComposition[j].elementName];
-            nAtoms[elementi] -= rhs[i].stoichCoeff*specieComposition[j].nAtoms;
+            label elementi = elementIndices_[specieComposition[j].name()];
+            nAtoms[elementi] -=
+                rhs[i].stoichCoeff*specieComposition[j].nAtoms();
         }
     }
 
@@ -488,7 +491,7 @@ void Foam::chemkinReader::addReaction
                     new NonEquilibriumReversibleReaction
                         <Reaction, gasHThermoPhysics, ArrheniusReactionRate>
                     (
-                        Reaction<gasHThermoPhysics>
+                        ReactionProxy<gasHThermoPhysics>
                         (
                             speciesTable_,
                             lhs.shrink(),
@@ -544,7 +547,7 @@ void Foam::chemkinReader::addReaction
                         thirdBodyArrheniusReactionRate
                     >
                     (
-                        Reaction<gasHThermoPhysics>
+                        ReactionProxy<gasHThermoPhysics>
                         (
                             speciesTable_,
                             lhs.shrink(),
@@ -644,9 +647,13 @@ void Foam::chemkinReader::addReaction
                 reactions_.append
                 (
                     new NonEquilibriumReversibleReaction
-                        <Reaction, gasHThermoPhysics, LandauTellerReactionRate>
+                    <
+                        Reaction,
+                        gasHThermoPhysics,
+                        LandauTellerReactionRate
+                    >
                     (
-                        Reaction<gasHThermoPhysics>
+                        ReactionProxy<gasHThermoPhysics>
                         (
                             speciesTable_,
                             lhs.shrink(),
@@ -734,7 +741,7 @@ void Foam::chemkinReader::addReaction
         }
         case unknownReactionRateType:
         {
-            FatalErrorIn("chemkinReader::addReaction")
+            FatalErrorInFunction
                 << "Internal error on line " << lineNo_-1
                 << ": reaction rate type has not been set"
                 << exit(FatalError);
@@ -742,7 +749,7 @@ void Foam::chemkinReader::addReaction
         }
         default:
         {
-            FatalErrorIn("chemkinReader::addReaction")
+            FatalErrorInFunction
                 << "Reaction rate type " << reactionRateTypeNames[rrType]
                 << " on line " << lineNo_-1
                 << " not implemented"
@@ -753,10 +760,11 @@ void Foam::chemkinReader::addReaction
 
     forAll(nAtoms, i)
     {
-        if (mag(nAtoms[i]) > SMALL)
+        if (mag(nAtoms[i]) > imbalanceTol_)
         {
-            FatalErrorIn("chemkinReader::addReaction")
-                << "Elemental imbalance in " << elementNames_[i]
+            FatalErrorInFunction
+                << "Elemental imbalance of " << mag(nAtoms[i])
+                << " in " << elementNames_[i]
                 << " in reaction" << nl
                 << reactions_.last() << nl
                 << " on line " << lineNo_-1
@@ -773,20 +781,23 @@ void Foam::chemkinReader::addReaction
 void Foam::chemkinReader::read
 (
     const fileName& CHEMKINFileName,
-    const fileName& thermoFileName
+    const fileName& thermoFileName,
+    const fileName& transportFileName
 )
 {
+    Reaction<gasHThermoPhysics>::TlowDefault = 0;
+    Reaction<gasHThermoPhysics>::ThighDefault = great;
+
+    transportDict_.read(IFstream(transportFileName)());
+
     if (thermoFileName != fileName::null)
     {
         std::ifstream thermoStream(thermoFileName.c_str());
 
         if (!thermoStream)
         {
-            FatalErrorIn
-            (
-                "chemkin::chemkin(const fileName& CHEMKINFileName, "
-                "const fileName& thermoFileName)"
-            )   << "file " << thermoFileName << " not found"
+            FatalErrorInFunction
+                << "file " << thermoFileName << " not found"
                 << exit(FatalError);
         }
 
@@ -805,11 +816,8 @@ void Foam::chemkinReader::read
 
     if (!CHEMKINStream)
     {
-        FatalErrorIn
-        (
-            "chemkin::chemkin(const fileName& CHEMKINFileName, "
-            "const fileName& thermoFileName)"
-        )   << "file " << CHEMKINFileName << " not found"
+        FatalErrorInFunction
+            << "file " << CHEMKINFileName << " not found"
             << exit(FatalError);
     }
 
@@ -829,8 +837,9 @@ void Foam::chemkinReader::read
 
 Foam::chemkinReader::chemkinReader
 (
-    const fileName& CHEMKINFileName,
     speciesTable& species,
+    const fileName& CHEMKINFileName,
+    const fileName& transportFileName,
     const fileName& thermoFileName,
     const bool newFormat
 )
@@ -839,9 +848,10 @@ Foam::chemkinReader::chemkinReader
     specieNames_(10),
     speciesTable_(species),
     reactions_(speciesTable_, speciesThermo_),
-    newFormat_(newFormat)
+    newFormat_(newFormat),
+    imbalanceTol_(rootSmall)
 {
-    read(CHEMKINFileName, thermoFileName);
+    read(CHEMKINFileName, thermoFileName, transportFileName);
 }
 
 
@@ -855,7 +865,8 @@ Foam::chemkinReader::chemkinReader
     specieNames_(10),
     speciesTable_(species),
     reactions_(speciesTable_, speciesThermo_),
-    newFormat_(thermoDict.lookupOrDefault("newFormat", false))
+    newFormat_(thermoDict.lookupOrDefault("newFormat", false)),
+    imbalanceTol_(thermoDict.lookupOrDefault("imbalanceTolerance", rootSmall))
 {
     if (newFormat_)
     {
@@ -871,6 +882,11 @@ Foam::chemkinReader::chemkinReader
         thermoFile = fileName(thermoDict.lookup("CHEMKINThermoFile")).expand();
     }
 
+    fileName transportFile
+    (
+        fileName(thermoDict.lookup("CHEMKINTransportFile")).expand()
+    );
+
     // allow relative file names
     fileName relPath = thermoDict.name().path();
     if (relPath.size())
@@ -880,13 +896,18 @@ Foam::chemkinReader::chemkinReader
             chemkinFile = relPath/chemkinFile;
         }
 
-        if (!thermoFile.isAbsolute())
+        if (thermoFile != fileName::null && !thermoFile.isAbsolute())
         {
             thermoFile = relPath/thermoFile;
         }
+
+        if (!transportFile.isAbsolute())
+        {
+            transportFile = relPath/transportFile;
+        }
     }
 
-    read(chemkinFile, thermoFile);
+    read(chemkinFile, thermoFile, transportFile);
 }
 
 

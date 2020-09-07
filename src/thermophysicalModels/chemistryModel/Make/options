@@ -1,17 +1,18 @@
 EXE_INC = \
-    -I$(LIB_SRC)/finiteVolume/lnInclude \
-    -I$(LIB_FLAMELET_SRC)/thermophysicalModels/reactionThermo/lnInclude \
-    -I$(LIB_FLAMELET_SRC)/thermophysicalModels/basic/lnInclude \
-    -I$(LIB_FLAMELET_SRC)/thermophysicalModels/specie/lnInclude \
+    -I$(LIB_SRC)/transportModels/compressible/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/reactionThermo/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/basic/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/specie/lnInclude \
     -I$(LIB_SRC)/thermophysicalModels/functions/Polynomial \
-    -I$(LIB_SRC)/thermophysicalModels/thermophysicalFunctions/lnInclude \
-    -I$(LIB_FLAMELET_SRC)/turbulenceModels/compressible/lnInclude \
-    -I$(LIB_SRC)/ODE/lnInclude
+    -I$(LIB_SRC)/ODE/lnInclude \
+    -I$(LIB_SRC)/finiteVolume/lnInclude \
+    -I$(LIB_SRC)/meshTools/lnInclude
 
 LIB_LIBS = \
-    -L$(FOAM_USER_LIBBIN) \
-    -lFlameletfluidThermophysicalModels \
-    -lFlameletreactionThermophysicalModels \
-    -lFlameletspecie \
-    -lthermophysicalFunctions \
-    -lODE
+    -lcompressibleTransportModels \
+    -lfluidThermophysicalModels \
+    -lreactionThermophysicalModels \
+    -lspecie \
+    -lODE \
+    -lfiniteVolume \
+    -lmeshTools

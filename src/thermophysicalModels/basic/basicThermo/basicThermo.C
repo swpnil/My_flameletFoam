@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -49,7 +49,7 @@ const Foam::word Foam::basicThermo::dictName("thermophysicalProperties");
 
 Foam::wordList Foam::basicThermo::heBoundaryBaseTypes()
 {
-    const volScalarField::GeometricBoundaryField& tbf =
+    const volScalarField::Boundary& tbf =
         this->T_.boundaryField();
 
     wordList hbt(tbf.size(), word::null);
@@ -81,7 +81,7 @@ Foam::wordList Foam::basicThermo::heBoundaryBaseTypes()
 
 Foam::wordList Foam::basicThermo::heBoundaryTypes()
 {
-    const volScalarField::GeometricBoundaryField& tbf =
+    const volScalarField::Boundary& tbf =
         this->T_.boundaryField();
 
     wordList hbt = tbf.types();
@@ -152,10 +152,7 @@ Foam::volScalarField& Foam::basicThermo::lookupOrConstruct
         fPtr->store(fPtr);
     }
 
-    return const_cast<volScalarField&>
-    (
-        mesh.objectRegistry::lookupObject<volScalarField>(name)
-    );
+    return mesh.objectRegistry::lookupObjectRef<volScalarField>(name);
 }
 
 
@@ -201,11 +198,16 @@ Foam::basicThermo::basicThermo
             phasePropertyName("thermo:alpha"),
             mesh.time().timeName(),
             mesh,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::READ_IF_PRESENT,
+            IOobject::NO_WRITE
         ),
         mesh,
-        dimensionSet(1, -1, -1, 0, 0)
+        dimensionedScalar
+        (
+            "zero",
+            dimensionSet(1, -1, -1, 0, 0),
+            Zero
+        )
     ),
 
     dpdt_(lookupOrDefault<Switch>("dpdt", true))
@@ -227,7 +229,7 @@ Foam::basicThermo::basicThermo
             mesh.time().constant(),
             mesh,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         dict
     ),
@@ -256,11 +258,16 @@ Foam::basicThermo::basicThermo
             phasePropertyName("thermo:alpha"),
             mesh.time().timeName(),
             mesh,
-            IOobject::NO_READ,
+            IOobject::READ_IF_PRESENT,
             IOobject::NO_WRITE
         ),
         mesh,
-        dimensionSet(1, -1, -1, 0, 0)
+        dimensionedScalar
+        (
+            "zero",
+            dimensionSet(1, -1, -1, 0, 0),
+            Zero
+        )
     )
 {}
 
@@ -308,8 +315,8 @@ const Foam::basicThermo& Foam::basicThermo::lookupThermo
         {
             if
             (
-                &(iter()->he().dimensionedInternalField())
-              == &(pf.dimensionedInternalField())
+                &(iter()->he().internalField())
+              == &(pf.internalField())
             )
             {
                 return *iter();
@@ -329,7 +336,7 @@ void Foam::basicThermo::validate
 {
     if (!(he().name() == phasePropertyName(a)))
     {
-        FatalErrorIn(app)
+        FatalErrorInFunction
             << "Supported energy type is " << phasePropertyName(a)
             << ", thermodynamics package provides " << he().name()
             << exit(FatalError);
@@ -351,7 +358,7 @@ void Foam::basicThermo::validate
         )
     )
     {
-        FatalErrorIn(app)
+        FatalErrorInFunction
             << "Supported energy types are " << phasePropertyName(a)
             << " and " << phasePropertyName(b)
             << ", thermodynamics package provides " << he().name()
@@ -376,7 +383,7 @@ void Foam::basicThermo::validate
         )
     )
     {
-        FatalErrorIn(app)
+        FatalErrorInFunction
             << "Supported energy types are " << phasePropertyName(a)
             << ", " << phasePropertyName(b)
             << " and " << phasePropertyName(c)
@@ -404,7 +411,7 @@ void Foam::basicThermo::validate
         )
     )
     {
-        FatalErrorIn(app)
+        FatalErrorInFunction
             << "Supported energy types are " << phasePropertyName(a)
             << ", " << phasePropertyName(b)
             << ", " << phasePropertyName(c)
@@ -449,14 +456,28 @@ Foam::wordList Foam::basicThermo::splitThermoName
         {
             cmpts[i] = thermoName.substr(beg, end-beg);
             cmpts[i++].replaceAll(">","");
+
+            // If the number of number of components in the name
+            // is greater than nCmpt return an empty list
+            if (i == nCmpt)
+            {
+                return wordList();
+            }
         }
         beg = end + 1;
+    }
+
+    // If the number of number of components in the name is not equal to nCmpt
+    // return an empty list
+    if (i + 1 != nCmpt)
+    {
+        return wordList();
     }
 
     if (beg < thermoName.size())
     {
         cmpts[i] = thermoName.substr(beg, string::npos);
-        cmpts[i++].replaceAll(">","");
+        cmpts[i].replaceAll(">","");
     }
 
     return cmpts;
@@ -473,6 +494,7 @@ const Foam::volScalarField& Foam::basicThermo::p() const
 {
     return p_;
 }
+
 
 const Foam::volScalarField& Foam::basicThermo::T() const
 {
@@ -491,10 +513,6 @@ const Foam::volScalarField& Foam::basicThermo::alpha() const
     return alpha_;
 }
 
-Foam::volScalarField& Foam::basicThermo::alpha()
-{
-    return alpha_;
-}
 
 const Foam::scalarField& Foam::basicThermo::alpha(const label patchi) const
 {

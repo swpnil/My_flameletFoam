@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2012-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -25,8 +25,8 @@ Class
     Foam::absoluteInternalEnergy
 
 Description
-    Thermodynamics mapping class to expose the absolute internal energy function
-    as the standard internal energy function e(T).
+    Thermodynamics mapping class to expose the absolute internal energy
+    functions.
 
 \*---------------------------------------------------------------------------*/
 
@@ -65,35 +65,24 @@ public:
 
         // Fundamental properties
 
-            static word name()
+            static word energyName()
             {
                 return "ea";
             }
 
-            // Absolute internal energy [J/kmol]
-            scalar he
+            // Heat capacity at constant volume [J/(kg K)]
+            scalar Cpv
             (
                 const Thermo& thermo,
                 const scalar p,
                 const scalar T
             ) const
             {
-                return thermo.ea(p, T);
+                return thermo.Cv(p, T);
             }
 
-            // Heat capacity at constant volume [J/(kmol K)]
-            scalar cpv
-            (
-                const Thermo& thermo,
-                const scalar p,
-                const scalar T
-            ) const
-            {
-                return thermo.cv(p, T);
-            }
-
-            //- cp/cv []
-            scalar cpBycpv
+            //- Cp/Cv []
+            scalar CpByCpv
             (
                 const Thermo& thermo,
                 const scalar p,

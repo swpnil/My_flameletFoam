@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -54,7 +54,7 @@ namespace Foam
 template<class ThermoType>
 class ReactionList
 :
-    public SLPtrList<Reaction<ThermoType> >
+    public SLPtrList<Reaction<ThermoType>>
 {
     // Private data
 
@@ -93,14 +93,6 @@ public:
             const dictionary& dict
         );
 
-        //- Construct from file using (Istream)
-        ReactionList
-        (
-            const speciesTable& species,
-            const HashPtrTable<ThermoType>& thermoDatabase,
-            const fileName& fName
-        );
-
         //- Construct copy
         ReactionList(const ReactionList<ThermoType>& reactions);
 
@@ -125,7 +117,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-#   include "ReactionList.C"
+    #include "ReactionList.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

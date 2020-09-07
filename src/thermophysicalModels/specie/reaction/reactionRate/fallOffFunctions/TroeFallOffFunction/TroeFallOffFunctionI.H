@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -40,17 +40,6 @@ inline Foam::TroeFallOffFunction::TroeFallOffFunction
 {}
 
 
-inline Foam::TroeFallOffFunction::TroeFallOffFunction(Istream& is)
-:
-    alpha_(readScalar(is.readBegin("TroeFallOffFunction(Istream&)"))),
-    Tsss_(readScalar(is)),
-    Ts_(readScalar(is)),
-    Tss_(readScalar(is))
-{
-    is.readEnd("TroeFallOffFunction(Istream&)");
-}
-
-
 inline Foam::TroeFallOffFunction::TroeFallOffFunction(const dictionary& dict)
 :
     alpha_(readScalar(dict.lookup("alpha"))),
@@ -73,7 +62,7 @@ inline Foam::scalar Foam::TroeFallOffFunction::operator()
         max
         (
             (1 - alpha_)*exp(-T/Tsss_) + alpha_*exp(-T/Ts_) + exp(-Tss_/T),
-            SMALL
+            small
         )
     );
 
@@ -81,8 +70,103 @@ inline Foam::scalar Foam::TroeFallOffFunction::operator()
     static const scalar d = 0.14;
     scalar n = 0.75 - 1.27*logFcent;
 
-    scalar logPr = log10(max(Pr, SMALL));
-    return pow(10.0, logFcent/(1.0 + sqr((logPr + c)/(n - d*(logPr + c)))));
+    scalar logPr = log10(max(Pr, small));
+    return pow(10, logFcent/(1 + sqr((logPr + c)/(n - d*(logPr + c)))));
+}
+
+
+inline Foam::scalar Foam::TroeFallOffFunction::ddT
+(
+    const scalar Pr,
+    const scalar F,
+    const scalar dPrdT,
+    const scalar T
+) const
+{
+    scalar logPr = log10(max(Pr, small));
+    scalar logTen = log(10.0);
+    scalar Fcent =
+    (
+        max
+        (
+            (1 - alpha_)*exp(-T/Tsss_) + alpha_*exp(-T/Ts_) + exp(-Tss_/T),
+            small
+        )
+    );
+    scalar logFcent = log10(Fcent);
+
+    scalar dFcentdT =
+    (
+        (alpha_ - 1)*exp(-T/Tsss_)/Tsss_
+      - alpha_*exp(-T/Ts_)/Ts_
+      + Tss_*exp(-Tss_/T)/sqr(T)
+    );
+
+    scalar d = 0.14;
+    scalar dlogFcentdT = dFcentdT/Fcent/logTen;
+    scalar c = -0.4 - 0.67*logFcent;
+    scalar dcdT = -0.67*dlogFcentdT;
+    scalar n = 0.75 - 1.27*logFcent;
+    scalar dndT = -1.27*dlogFcentdT;
+
+    scalar dlogPrdT = dPrdT/Pr/logTen;
+
+    scalar dParentdT =
+        2.0*(logPr + c)/sqr(n - d*(logPr + c))
+       *(
+            (dlogPrdT + dcdT)
+          - (logPr + c)*(dndT - d*(dlogPrdT + dcdT))/(n - d*(logPr + c))
+        );
+
+    return
+    (
+        F*logTen
+       *(
+            dlogFcentdT/(1.0 + sqr((logPr + c)/(n - d*(logPr + c))))
+          - logFcent*dParentdT/sqr(1.0 + sqr((logPr + c)/(n - d*(logPr + c))))
+        )
+    );
+}
+
+
+inline Foam::scalar Foam::TroeFallOffFunction::ddc
+(
+    const scalar Pr,
+    const scalar F,
+    const scalar dPrdc,
+    const scalar T
+) const
+{
+    scalar logPr = log10(max(Pr, small));
+    scalar logTen = log(10.0);
+    scalar logFcent = log10
+    (
+        max
+        (
+            (1 - alpha_)*exp(-T/Tsss_) + alpha_*exp(-T/Ts_) + exp(-Tss_/T),
+            small
+        )
+    );
+
+    scalar dlogPrdc = dPrdc/Pr/logTen;
+    scalar d = 0.14;
+    scalar c = -0.4 - 0.67*logFcent;
+    scalar n = 0.75 - 1.27*logFcent;
+
+    scalar dParentdc =
+        2.0*(logPr + c)/sqr(n - d*(logPr + c))
+       *(
+            (dlogPrdc)
+          - (logPr + c)*(-d*(dlogPrdc))/(n - d*(logPr + c))
+        );
+
+    return
+    (
+        F*logTen
+       *(
+          - logFcent*dParentdc/sqr(1.0 + sqr((logPr + c)/(n - d*(logPr + c))))
+        )
+    );
 }
 
 
@@ -103,13 +187,7 @@ inline Foam::Ostream& Foam::operator<<
     const Foam::TroeFallOffFunction& tfof
 )
 {
-    os  << token::BEGIN_LIST
-        << tfof.alpha_
-        << token::SPACE << tfof.Tsss_
-        << token::SPACE << tfof.Ts_
-        << token::SPACE << tfof.Tss_
-        << token::END_LIST;
-
+    tfof.write(os);
     return os;
 }
 
