@@ -1,1 +1,0 @@
-../derivedFvPatchFields/convectiveHeatTransfer/convectiveHeatTransferFvPatchScalarField.H
