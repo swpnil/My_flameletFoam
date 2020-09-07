@@ -1,0 +1,10 @@
+OBJECTS = \
+$(OBJECTS_DIR)/combustionModel.o\
+$(OBJECTS_DIR)/rhoCombustionModel.o\
+$(OBJECTS_DIR)/rhoCombustionModelNew.o\
+$(OBJECTS_DIR)/rhoThermoCombustion.o\
+$(OBJECTS_DIR)/rhoChemistryCombustion.o\
+$(OBJECTS_DIR)/linearInterpolation.o\
+$(OBJECTS_DIR)/flameletTable.o\
+$(OBJECTS_DIR)/tableSolver.o\
+$(OBJECTS_DIR)/YSLFModels.o

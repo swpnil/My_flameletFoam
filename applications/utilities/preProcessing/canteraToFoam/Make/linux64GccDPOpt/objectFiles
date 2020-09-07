@@ -1,0 +1,5 @@
+OBJECTS = \
+$(OBJECTS_DIR)/Gamma.o\
+$(OBJECTS_DIR)/canteraScanner.o\
+$(OBJECTS_DIR)/canteraReader.o\
+$(OBJECTS_DIR)/canteraToFoam.o

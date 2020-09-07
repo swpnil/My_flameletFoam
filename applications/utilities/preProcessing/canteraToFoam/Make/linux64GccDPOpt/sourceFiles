@@ -1,0 +1,5 @@
+SOURCE = \
+Gamma.cpp\
+canteraScanner.C\
+canteraReader.C\
+canteraToFoam.C

@@ -1,0 +1,5 @@
+DEPENDENCIES = \
+Gamma.dep\
+canteraScanner.dep\
+canteraReader.dep\
+canteraToFoam.dep

@@ -1,0 +1,4 @@
+include Gamma.dep
+include canteraScanner.dep
+include canteraReader.dep
+include canteraToFoam.dep

@@ -1,0 +1,5 @@
+LOCAL_OBJECTS = \
+Gamma.o\
+canteraScanner.o\
+canteraReader.o\
+canteraToFoam.o

@@ -1,0 +1,7 @@
+$(OBJECTS_DIR)/Gamma.o: Gamma.dep
+Gamma.dep: Gamma.cpp
+Gamma.dep: Gamma.h
+$(OBJECTS_DIR)/Gamma.o: $(EXE_DEP)
+$(OBJECTS_DIR)/Gamma.o:
+	@SOURCE_DIR=.
+	SOURCE=Gamma.cpp ; $(cpptoo)
