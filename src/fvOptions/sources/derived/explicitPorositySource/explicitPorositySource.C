@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2012-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2012-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -45,33 +45,6 @@ namespace fv
 }
 }
 
-// * * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * //
-
-void Foam::fv::explicitPorositySource::initialise()
-{
-    if (selectionMode_ != smCellZone)
-    {
-        FatalErrorIn("void Foam::fv::explicitPorositySource::initialise()")
-            << "The porosity region must be specified as a cellZone.  Current "
-            << "selection mode is " << selectionModeTypeNames_[selectionMode_]
-            << exit(FatalError);
-    }
-
-    porosityPtr_.reset
-    (
-        porosityModel::New
-        (
-            name_,
-            mesh_,
-            coeffs_,
-            cellSetName_
-        ).ptr()
-    ),
-
-    fieldNames_.setSize(1, UName_);
-    applied_.setSize(1, false);
-}
-
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -83,13 +56,21 @@ Foam::fv::explicitPorositySource::explicitPorositySource
     const fvMesh& mesh
 )
 :
-    option(name, modelType, dict, mesh),
-    porosityPtr_(NULL),
-    UName_(coeffs_.lookupOrDefault<word>("UName", "U")),
-    rhoName_(coeffs_.lookupOrDefault<word>("rhoName", "rho")),
-    muName_(coeffs_.lookupOrDefault<word>("muName", "thermo:mu"))
+    cellSetOption(name, modelType, dict, mesh),
+    porosityPtr_(nullptr)
 {
-    initialise();
+    read(dict);
+
+    porosityPtr_.reset
+    (
+        porosityModel::New
+        (
+            name_,
+            mesh_,
+            coeffs_,
+            cellSetName_
+        ).ptr()
+    );
 }
 
 
@@ -98,42 +79,61 @@ Foam::fv::explicitPorositySource::explicitPorositySource
 void Foam::fv::explicitPorositySource::addSup
 (
     fvMatrix<vector>& eqn,
-    const label fieldI
+    const label fieldi
 )
 {
     fvMatrix<vector> porosityEqn(eqn.psi(), eqn.dimensions());
-
-    if (eqn.dimensions() == dimForce)
-    {
-        const volScalarField& rho =
-            mesh_.lookupObject<volScalarField>(rhoName_);
-        const volScalarField& mu = mesh_.lookupObject<volScalarField>(muName_);
-
-        porosityPtr_->addResistance(porosityEqn, rho, mu);
-    }
-    else
-    {
-        porosityPtr_->addResistance(porosityEqn);
-    }
-
+    porosityPtr_->addResistance(porosityEqn);
     eqn -= porosityEqn;
 }
 
 
-void Foam::fv::explicitPorositySource::writeData(Ostream& os) const
+void Foam::fv::explicitPorositySource::addSup
+(
+    const volScalarField& rho,
+    fvMatrix<vector>& eqn,
+    const label fieldi
+)
 {
-    os  << indent << name_ << endl;
-    dict_.write(os);
+    fvMatrix<vector> porosityEqn(eqn.psi(), eqn.dimensions());
+    porosityPtr_->addResistance(porosityEqn);
+    eqn -= porosityEqn;
+}
+
+
+void Foam::fv::explicitPorositySource::addSup
+(
+    const volScalarField& alpha,
+    const volScalarField& rho,
+    fvMatrix<vector>& eqn,
+    const label fieldi
+)
+{
+    fvMatrix<vector> porosityEqn(eqn.psi(), eqn.dimensions());
+    porosityPtr_->addResistance(porosityEqn);
+    eqn -= alpha*porosityEqn;
 }
 
 
 bool Foam::fv::explicitPorositySource::read(const dictionary& dict)
 {
-    if (option::read(dict))
+    if (cellSetOption::read(dict))
     {
-        coeffs_.readIfPresent("UName", UName_);
-        coeffs_.readIfPresent("rhoName", rhoName_);
-        coeffs_.readIfPresent("muName", muName_);
+        if (coeffs_.found("UNames"))
+        {
+            coeffs_.lookup("UNames") >> fieldNames_;
+        }
+        else if (coeffs_.found("U"))
+        {
+            word UName(coeffs_.lookup("U"));
+            fieldNames_ = wordList(1, UName);
+        }
+        else
+        {
+            fieldNames_ = wordList(1, "U");
+        }
+
+        applied_.setSize(fieldNames_.size(), false);
 
         return true;
     }

@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2012-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2012-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -24,9 +24,8 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "targetCoeffTrim.H"
+#include "geometricOneField.H"
 #include "addToRunTimeSelectionTable.H"
-#include "unitConversion.H"
-#include "mathematicalConstants.H"
 
 using namespace Foam::constant;
 
@@ -42,17 +41,16 @@ namespace Foam
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
+template<class RhoFieldType>
 Foam::vector Foam::targetCoeffTrim::calcCoeffs
 (
+    const RhoFieldType& rho,
     const vectorField& U,
     const scalarField& thetag,
     vectorField& force
 ) const
 {
-    rotor_.calculate(U, thetag, force, false, false);
-
-    bool compressible = rotor_.compressible();
-    tmp<volScalarField> trho = rotor_.rho();
+    rotor_.calculate(rho, U, thetag, force, false, false);
 
     const labelList& cells = rotor_.cells();
     const vectorField& C = rotor_.mesh().C();
@@ -65,27 +63,23 @@ Foam::vector Foam::targetCoeffTrim::calcCoeffs
 
     scalar coeff1 = alpha_*sqr(rotor_.omega())*mathematical::pi;
 
-    vector cf(vector::zero);
+    vector cf(Zero);
     forAll(cells, i)
     {
-        label cellI = cells[i];
+        label celli = cells[i];
 
-        vector fc = force[cellI];
-        vector mc = fc^(C[cellI] - origin);
+        vector fc = force[celli];
+        vector mc = fc^(C[celli] - origin);
 
         if (useCoeffs_)
         {
             scalar radius = x[i].x();
-            scalar coeff2 = coeff1*pow4(radius);
-            if (compressible)
-            {
-                coeff2 *= trho()[cellI];
-            }
+            scalar coeff2 = rho[celli]*coeff1*pow4(radius);
 
             // add to coefficient vector
-            cf[0] += (fc & yawAxis)/(coeff2 + ROOTVSMALL);
-            cf[1] += (mc & pitchAxis)/(coeff2*radius + ROOTVSMALL);
-            cf[2] += (mc & rollAxis)/(coeff2*radius + ROOTVSMALL);
+            cf[0] += (fc & yawAxis)/(coeff2 + rootVSmall);
+            cf[1] += (mc & pitchAxis)/(coeff2*radius + rootVSmall);
+            cf[2] += (mc & rollAxis)/(coeff2*radius + rootVSmall);
         }
         else
         {
@@ -101,6 +95,99 @@ Foam::vector Foam::targetCoeffTrim::calcCoeffs
 }
 
 
+template<class RhoFieldType>
+void Foam::targetCoeffTrim::correctTrim
+(
+    const RhoFieldType& rho,
+    const vectorField& U,
+    vectorField& force
+)
+{
+    if (rotor_.mesh().time().timeIndex() % calcFrequency_ == 0)
+    {
+        word calcType = "forces";
+        if (useCoeffs_)
+        {
+            calcType = "coefficients";
+        }
+
+        Info<< type() << ":" << nl
+            << "    solving for target trim " << calcType << nl;
+
+        const scalar rhoRef = rotor_.rhoRef();
+
+        // iterate to find new pitch angles to achieve target force
+        scalar err = great;
+        label iter = 0;
+        tensor J(Zero);
+
+        vector old = Zero;
+        while ((err > tol_) && (iter < nIter_))
+        {
+            // cache initial theta vector
+            vector theta0(theta_);
+
+            // set initial values
+            old = calcCoeffs(rho, U, thetag(), force);
+
+            // construct Jacobian by perturbing the pitch angles
+            // by +/-(dTheta_/2)
+            for (label pitchI = 0; pitchI < 3; pitchI++)
+            {
+                theta_[pitchI] -= dTheta_/2.0;
+                vector cf0 = calcCoeffs(rho, U, thetag(), force);
+
+                theta_[pitchI] += dTheta_;
+                vector cf1 = calcCoeffs(rho, U, thetag(), force);
+
+                vector ddTheta = (cf1 - cf0)/dTheta_;
+
+                J[pitchI + 0] = ddTheta[0];
+                J[pitchI + 3] = ddTheta[1];
+                J[pitchI + 6] = ddTheta[2];
+
+                theta_ = theta0;
+            }
+
+            // calculate the change in pitch angle vector
+            vector dt = inv(J) & (target_/rhoRef - old);
+
+            // update pitch angles
+            vector thetaNew = theta_ + relax_*dt;
+
+            // update error
+            err = mag(thetaNew - theta_);
+
+            // update for next iteration
+            theta_ = thetaNew;
+            iter++;
+        }
+
+        if (iter == nIter_)
+        {
+            Info<< "    solution not converged in " << iter
+                << " iterations, final residual = " << err
+                << "(" << tol_ << ")" << endl;
+        }
+        else
+        {
+            Info<< "    final residual = " << err << "(" << tol_
+                << "), iterations = " << iter << endl;
+        }
+
+        Info<< "    current and target " << calcType << nl
+            << "        thrust  = " << old[0]*rhoRef << ", " << target_[0] << nl
+            << "        pitch   = " << old[1]*rhoRef << ", " << target_[1] << nl
+            << "        roll    = " << old[2]*rhoRef << ", " << target_[2] << nl
+            << "    new pitch angles [deg]:" << nl
+            << "        theta0  = " << radToDeg(theta_[0]) << nl
+            << "        theta1c = " << radToDeg(theta_[1]) << nl
+            << "        theta1s = " << radToDeg(theta_[2]) << nl
+            << endl;
+    }
+}
+
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 Foam::targetCoeffTrim::targetCoeffTrim
@@ -112,8 +199,8 @@ Foam::targetCoeffTrim::targetCoeffTrim
     trimModel(rotor, dict, typeName),
     calcFrequency_(-1),
     useCoeffs_(true),
-    target_(vector::zero),
-    theta_(vector::zero),
+    target_(Zero),
+    theta_(Zero),
     nIter_(50),
     tol_(1e-8),
     relax_(1.0),
@@ -173,7 +260,7 @@ Foam::tmp<Foam::scalarField> Foam::targetCoeffTrim::thetag() const
     const List<vector>& x = rotor_.x();
 
     tmp<scalarField> ttheta(new scalarField(x.size()));
-    scalarField& t = ttheta();
+    scalarField& t = ttheta.ref();
 
     forAll(t, i)
     {
@@ -185,90 +272,24 @@ Foam::tmp<Foam::scalarField> Foam::targetCoeffTrim::thetag() const
 }
 
 
-void Foam::targetCoeffTrim::correct(const vectorField& U, vectorField& force)
+void Foam::targetCoeffTrim::correct
+(
+    const vectorField& U,
+    vectorField& force
+)
 {
-    if (rotor_.mesh().time().timeIndex() % calcFrequency_ == 0)
-    {
-        word calcType = "forces";
-        if (useCoeffs_)
-        {
-            calcType = "coefficients";
-        }
+    correctTrim(geometricOneField(), U, force);
+}
 
-        Info<< type() << ":" << nl
-            << "    solving for target trim " << calcType << nl;
 
-        const scalar rhoRef = rotor_.rhoRef();
-
-        // iterate to find new pitch angles to achieve target force
-        scalar err = GREAT;
-        label iter = 0;
-        tensor J(tensor::zero);
-
-        vector old = vector::zero;
-        while ((err > tol_) && (iter < nIter_))
-        {
-            // cache initial theta vector
-            vector theta0(theta_);
-
-            // set initial values
-            old = calcCoeffs(U, thetag(), force);
-
-            // construct Jacobian by perturbing the pitch angles
-            // by +/-(dTheta_/2)
-            for (label pitchI = 0; pitchI < 3; pitchI++)
-            {
-                theta_[pitchI] -= dTheta_/2.0;
-                vector cf0 = calcCoeffs(U, thetag(), force);
-
-                theta_[pitchI] += dTheta_;
-                vector cf1 = calcCoeffs(U, thetag(), force);
-
-                vector ddTheta = (cf1 - cf0)/dTheta_;
-
-                J[pitchI + 0] = ddTheta[0];
-                J[pitchI + 3] = ddTheta[1];
-                J[pitchI + 6] = ddTheta[2];
-
-                theta_ = theta0;
-            }
-
-            // calculate the change in pitch angle vector
-            vector dt = inv(J) & (target_/rhoRef - old);
-
-            // update pitch angles
-            vector thetaNew = theta_ + relax_*dt;
-
-            // update error
-            err = mag(thetaNew - theta_);
-
-            // update for next iteration
-            theta_ = thetaNew;
-            iter++;
-        }
-
-        if (iter == nIter_)
-        {
-            Info<< "    solution not converged in " << iter
-                << " iterations, final residual = " << err
-                << "(" << tol_ << ")" << endl;
-        }
-        else
-        {
-            Info<< "    final residual = " << err << "(" << tol_
-                << "), iterations = " << iter << endl;
-        }
-
-        Info<< "    current and target " << calcType << nl
-            << "        thrust  = " << old[0]*rhoRef << ", " << target_[0] << nl
-            << "        pitch   = " << old[1]*rhoRef << ", " << target_[1] << nl
-            << "        roll    = " << old[2]*rhoRef << ", " << target_[2] << nl
-            << "    new pitch angles [deg]:" << nl
-            << "        theta0  = " << radToDeg(theta_[0]) << nl
-            << "        theta1c = " << radToDeg(theta_[1]) << nl
-            << "        theta1s = " << radToDeg(theta_[2]) << nl
-            << endl;
-    }
+void Foam::targetCoeffTrim::correct
+(
+    const volScalarField rho,
+    const vectorField& U,
+    vectorField& force
+)
+{
+    correctTrim(rho, U, force);
 }
 
 

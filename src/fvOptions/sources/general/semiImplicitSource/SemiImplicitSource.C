@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -26,7 +26,6 @@ License
 #include "SemiImplicitSource.H"
 #include "fvMesh.H"
 #include "fvMatrices.H"
-#include "DimensionedField.H"
 #include "fvmSup.H"
 
 // * * * * * * * * * * * * Static Member Functions * * * * * * * * * * * * * //
@@ -55,11 +54,8 @@ Foam::fv::SemiImplicitSource<Type>::wordToVolumeModeType
         }
     }
 
-    FatalErrorIn
-    (
-        "SemiImplicitSource<Type>::volumeModeType"
-        "SemiImplicitSource<Type>::wordToVolumeModeType(const word&)"
-    )   << "Unknown volumeMode type " << vmtName
+    FatalErrorInFunction
+        << "Unknown volumeMode type " << vmtName
         << ". Valid volumeMode types are:" << nl << volumeModeTypeNames_
         << exit(FatalError);
 
@@ -119,7 +115,7 @@ Foam::fv::SemiImplicitSource<Type>::SemiImplicitSource
     const fvMesh& mesh
 )
 :
-    option(name, modelType, dict, mesh),
+    cellSetOption(name, modelType, dict, mesh),
     volumeMode_(vmAbsolute),
     VDash_(1.0),
     injectionRate_()
@@ -134,7 +130,7 @@ template<class Type>
 void Foam::fv::SemiImplicitSource<Type>::addSup
 (
     fvMatrix<Type>& eqn,
-    const label fieldI
+    const label fieldi
 )
 {
     if (debug)
@@ -145,11 +141,11 @@ void Foam::fv::SemiImplicitSource<Type>::addSup
 
     const GeometricField<Type, fvPatchField, volMesh>& psi = eqn.psi();
 
-    DimensionedField<Type, volMesh> Su
+    typename GeometricField<Type, fvPatchField, volMesh>::Internal Su
     (
         IOobject
         (
-            name_ + fieldNames_[fieldI] + "Su",
+            name_ + fieldNames_[fieldi] + "Su",
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
@@ -160,18 +156,18 @@ void Foam::fv::SemiImplicitSource<Type>::addSup
         (
             "zero",
             eqn.dimensions()/dimVolume,
-            pTraits<Type>::zero
+            Zero
         ),
         false
     );
 
-    UIndirectList<Type>(Su, cells_) = injectionRate_[fieldI].first()/VDash_;
+    UIndirectList<Type>(Su, cells_) = injectionRate_[fieldi].first()/VDash_;
 
-    DimensionedField<scalar, volMesh> Sp
+    volScalarField::Internal Sp
     (
         IOobject
         (
-            name_ + fieldNames_[fieldI] + "Sp",
+            name_ + fieldNames_[fieldi] + "Sp",
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
@@ -187,9 +183,27 @@ void Foam::fv::SemiImplicitSource<Type>::addSup
         false
     );
 
-    UIndirectList<scalar>(Sp, cells_) = injectionRate_[fieldI].second()/VDash_;
+    UIndirectList<scalar>(Sp, cells_) = injectionRate_[fieldi].second()/VDash_;
 
     eqn += Su + fvm::SuSp(Sp, psi);
+}
+
+
+template<class Type>
+void Foam::fv::SemiImplicitSource<Type>::addSup
+(
+    const volScalarField& rho,
+    fvMatrix<Type>& eqn,
+    const label fieldi
+)
+{
+    if (debug)
+    {
+        Info<< "SemiImplicitSource<" << pTraits<Type>::typeName
+            << ">::addSup for source " << name_ << endl;
+    }
+
+    return this->addSup(eqn, fieldi);
 }
 
 

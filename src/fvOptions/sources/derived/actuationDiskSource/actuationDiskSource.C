@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -50,27 +50,27 @@ namespace fv
 
 void Foam::fv::actuationDiskSource::checkData() const
 {
-    if (magSqr(diskArea_) <= VSMALL)
+    if (magSqr(diskArea_) <= vSmall)
     {
-        FatalErrorIn("Foam::fv::actuationDiskSource::checkData()")
+        FatalErrorInFunction
            << "diskArea is approximately zero"
            << exit(FatalIOError);
     }
-    if (Cp_ <= VSMALL || Ct_ <= VSMALL)
+    if (Cp_ <= vSmall || Ct_ <= vSmall)
     {
-        FatalErrorIn("Foam::fv::actuationDiskSource::checkData()")
+        FatalErrorInFunction
            << "Cp and Ct must be greater than zero"
            << exit(FatalIOError);
     }
-    if (mag(diskDir_) < VSMALL)
+    if (mag(diskDir_) < vSmall)
     {
-        FatalErrorIn("Foam::fv::actuationDiskSource::checkData()")
+        FatalErrorInFunction
            << "disk direction vector is approximately zero"
            << exit(FatalIOError);
     }
     if (returnReduce(upstreamCellId_, maxOp<label>()) == -1)
     {
-        FatalErrorIn("Foam::fv::actuationDiskSource::checkData()")
+        FatalErrorInFunction
            << "upstream location " << upstreamPoint_  << " not found in mesh"
            << exit(FatalIOError);
     }
@@ -87,7 +87,7 @@ Foam::fv::actuationDiskSource::actuationDiskSource
     const fvMesh& mesh
 )
 :
-    option(name, modelType, dict, mesh),
+    cellSetOption(name, modelType, dict, mesh),
     diskDir_(coeffs_.lookup("diskDir")),
     Cp_(readScalar(coeffs_.lookup("Cp"))),
     Ct_(readScalar(coeffs_.lookup("Ct"))),
@@ -95,7 +95,7 @@ Foam::fv::actuationDiskSource::actuationDiskSource
     upstreamPoint_(coeffs_.lookup("upstreamPoint")),
     upstreamCellId_(-1)
 {
-    coeffs_.lookup("fieldNames") >> fieldNames_;
+    coeffs_.lookup("fields") >> fieldNames_;
     applied_.setSize(fieldNames_.size(), false);
 
     Info<< "    - creating actuation disk zone: "
@@ -112,57 +112,55 @@ Foam::fv::actuationDiskSource::actuationDiskSource
 void Foam::fv::actuationDiskSource::addSup
 (
     fvMatrix<vector>& eqn,
-    const label fieldI
+    const label fieldi
 )
 {
-    bool compressible = false;
-    if (eqn.dimensions() == dimForce)
-    {
-        compressible = true;
-    }
-
     const scalarField& cellsV = mesh_.V();
     vectorField& Usource = eqn.source();
     const vectorField& U = eqn.psi();
 
-    if (V() > VSMALL)
+    if (V() > vSmall)
     {
-        if (compressible)
-        {
-            addActuationDiskAxialInertialResistance
-            (
-                Usource,
-                cells_,
-                cellsV,
-                mesh_.lookupObject<volScalarField>("rho"),
-                U
-            );
-        }
-        else
-        {
-            addActuationDiskAxialInertialResistance
-            (
-                Usource,
-                cells_,
-                cellsV,
-                geometricOneField(),
-                U
-            );
-        }
+        addActuationDiskAxialInertialResistance
+        (
+            Usource,
+            cells_,
+            cellsV,
+            geometricOneField(),
+            U
+        );
     }
 }
 
 
-void Foam::fv::actuationDiskSource::writeData(Ostream& os) const
+void Foam::fv::actuationDiskSource::addSup
+(
+    const volScalarField& rho,
+    fvMatrix<vector>& eqn,
+    const label fieldi
+)
 {
-    os  << indent << name_ << endl;
-    dict_.write(os);
+    const scalarField& cellsV = mesh_.V();
+    vectorField& Usource = eqn.source();
+    const vectorField& U = eqn.psi();
+
+    if (V() > vSmall)
+    {
+        addActuationDiskAxialInertialResistance
+        (
+            Usource,
+            cells_,
+            cellsV,
+            rho,
+            U
+        );
+    }
 }
 
 
 bool Foam::fv::actuationDiskSource::read(const dictionary& dict)
 {
-    if (option::read(dict))
+    if (cellSetOption::read(dict))
     {
         coeffs_.readIfPresent("diskDir", diskDir_);
         coeffs_.readIfPresent("Cp", Cp_);

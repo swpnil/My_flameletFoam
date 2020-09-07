@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2012-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2012-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -27,13 +27,13 @@ Class
 Description
     Explicit porosity source
 
-    \heading Source usage
-
+Usage
     Example usage, here employing the Darcy-Forchheimer model:
     \verbatim
     explicitPorositySourceCoeffs
     {
         type            DarcyForchheimer;
+
         DarcyForchheimerCoeffs
         {
             d   d [0 -2 0 0 0 0 0] (5e7 -1000 -1000);
@@ -41,8 +41,14 @@ Description
 
             coordinateSystem
             {
-                e1  (0.70710678 0.70710678 0);
-                e2  (0 0 1);
+                type    cartesian;
+                origin  (0 0 0);
+                coordinateRotation
+                {
+                    type    axesRotation;
+                    e1  (0.70710678 0.70710678 0);
+                    e2  (0 0 1);
+                }
             }
         }
     }
@@ -59,7 +65,7 @@ SourceFiles
 #ifndef explicitPorositySource_H
 #define explicitPorositySource_H
 
-#include "fvOption.H"
+#include "cellSetOption.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -78,7 +84,7 @@ namespace fv
 
 class explicitPorositySource
 :
-    public option
+    public cellSetOption
 {
 
 protected:
@@ -87,22 +93,6 @@ protected:
 
         //- Run-time selectable porosity model
         autoPtr<porosityModel> porosityPtr_;
-
-        //- Velocity field name, default = U
-        word UName_;
-
-        //- Density field name (compressible case only), default = rho
-        word rhoName_;
-
-        //- Dynamic viscosity field name (compressible case only)
-        //  default = thermo:mu
-        word muName_;
-
-
-    // Protected Member Functions
-
-        //- Initialise
-        void initialise();
 
 
 private:
@@ -141,20 +131,39 @@ public:
 
     // Member Functions
 
+        const porosityModel& model() const
+        {
+            return porosityPtr_();
+        }
+
         // Add explicit and implicit contributions
 
-            //- Vector
+            //- Add implicit contribution to momentum equation
             virtual void addSup
             (
                 fvMatrix<vector>& eqn,
-                const label fieldI
+                const label fieldi
+            );
+
+            //- Add implicit contribution to compressible momentum equation
+            virtual void addSup
+            (
+                const volScalarField& rho,
+                fvMatrix<vector>& eqn,
+                const label fieldi
+            );
+
+            //- Add implicit contribution to phase momentum equation
+            virtual void addSup
+            (
+                const volScalarField& alpha,
+                const volScalarField& rho,
+                fvMatrix<vector>& eqn,
+                const label fieldi
             );
 
 
-        // I-O
-
-            //- Write data
-            virtual void writeData(Ostream&) const;
+        // IO
 
             //- Read dictionary
             virtual bool read(const dictionary& dict);

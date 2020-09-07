@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -61,23 +61,23 @@ void Foam::fv::effectivenessHeatExchangerSource::initialise()
     label count = 0;
     forAll(fZone, i)
     {
-        label faceI = fZone[i];
+        label facei = fZone[i];
         label faceId = -1;
         label facePatchId = -1;
-        if (mesh_.isInternalFace(faceI))
+        if (mesh_.isInternalFace(facei))
         {
-            faceId = faceI;
+            faceId = facei;
             facePatchId = -1;
         }
         else
         {
-            facePatchId = mesh_.boundaryMesh().whichPatch(faceI);
+            facePatchId = mesh_.boundaryMesh().whichPatch(facei);
             const polyPatch& pp = mesh_.boundaryMesh()[facePatchId];
             if (isA<coupledPolyPatch>(pp))
             {
                 if (refCast<const coupledPolyPatch>(pp).owner())
                 {
-                    faceId = pp.whichFace(faceI);
+                    faceId = pp.whichFace(facei);
                 }
                 else
                 {
@@ -86,7 +86,7 @@ void Foam::fv::effectivenessHeatExchangerSource::initialise()
             }
             else if (!isA<emptyPolyPatch>(pp))
             {
-                faceId = faceI - pp.start();
+                faceId = facei - pp.start();
             }
             else
             {
@@ -126,15 +126,15 @@ void Foam::fv::effectivenessHeatExchangerSource::calculateTotalArea
     area = 0;
     forAll(faceId_, i)
     {
-        label faceI = faceId_[i];
+        label facei = faceId_[i];
         if (facePatchId_[i] != -1)
         {
-            label patchI = facePatchId_[i];
-            area += mesh_.magSf().boundaryField()[patchI][faceI];
+            label patchi = facePatchId_[i];
+            area += mesh_.magSf().boundaryField()[patchi][facei];
         }
         else
         {
-            area += mesh_.magSf()[faceI];
+            area += mesh_.magSf()[facei];
         }
     }
     reduce(area, sumOp<scalar>());
@@ -151,14 +151,14 @@ Foam::fv::effectivenessHeatExchangerSource::effectivenessHeatExchangerSource
     const fvMesh& mesh
 )
 :
-    option(name, modelType, dict, mesh),
+    cellSetOption(name, modelType, dict, mesh),
     secondaryMassFlowRate_(readScalar(coeffs_.lookup("secondaryMassFlowRate"))),
     secondaryInletT_(readScalar(coeffs_.lookup("secondaryInletT"))),
     primaryInletT_(readScalar(coeffs_.lookup("primaryInletT"))),
     eTable_(),
-    UName_(coeffs_.lookupOrDefault<word>("UName", "U")),
-    TName_(coeffs_.lookupOrDefault<word>("TName", "T")),
-    phiName_(coeffs_.lookupOrDefault<word>("phiName", "phi")),
+    UName_(coeffs_.lookupOrDefault<word>("U", "U")),
+    TName_(coeffs_.lookupOrDefault<word>("T", "T")),
+    phiName_(coeffs_.lookupOrDefault<word>("phi", "phi")),
     faceZoneName_(coeffs_.lookup("faceZone")),
     zoneID_(mesh_.faceZones().findZoneID(faceZoneName_)),
     faceId_(),
@@ -166,26 +166,23 @@ Foam::fv::effectivenessHeatExchangerSource::effectivenessHeatExchangerSource
     faceSign_(),
     faceZoneArea_(0)
 {
-
     if (zoneID_ < 0)
     {
-        FatalErrorIn
-        (
-            "effectivenessHeatExchangerSource::effectivenessHeatExchangerSource"
-            "("
-                "const word&, "
-                "const word&, "
-                "const dictionary&, "
-                "const fvMesh&"
-            ")"
-        )
+        FatalErrorInFunction
             << type() << " " << this->name() << ": "
             << "    Unknown face zone name: " << faceZoneName_
             << ". Valid face zones are: " << mesh_.faceZones().names()
             << nl << exit(FatalError);
     }
 
-    fieldNames_.setSize(1, "energy");
+    // Set the field name to that of the energy field from which the temperature
+    // is obtained
+
+    const basicThermo& thermo =
+        mesh_.lookupObject<basicThermo>(basicThermo::dictName);
+
+    fieldNames_.setSize(1, thermo.he().name());
+
     applied_.setSize(1, false);
 
     eTable_.reset(new interpolation2DTable<scalar>(coeffs_));
@@ -196,25 +193,15 @@ Foam::fv::effectivenessHeatExchangerSource::effectivenessHeatExchangerSource
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-bool Foam::fv::effectivenessHeatExchangerSource::alwaysApply() const
-{
-    return true;
-}
-
-
 void Foam::fv::effectivenessHeatExchangerSource::addSup
 (
+    const volScalarField& rho,
     fvMatrix<scalar>& eqn,
     const label
 )
 {
     const basicThermo& thermo =
-        mesh_.lookupObject<basicThermo>("thermophysicalProperties");
-
-    if (eqn.psi().name() != thermo.he().name())
-    {
-        return;
-    }
+        mesh_.lookupObject<basicThermo>(basicThermo::dictName);
 
     const surfaceScalarField Cpf(fvc::interpolate(thermo.Cp()));
 
@@ -225,20 +212,20 @@ void Foam::fv::effectivenessHeatExchangerSource::addSup
     scalar CpfMean = 0;
     forAll(faceId_, i)
     {
-        label faceI = faceId_[i];
+        label facei = faceId_[i];
         if (facePatchId_[i] != -1)
         {
-            label patchI = facePatchId_[i];
-            totalphi += phi.boundaryField()[patchI][faceI]*faceSign_[i];
+            label patchi = facePatchId_[i];
+            totalphi += phi.boundaryField()[patchi][facei]*faceSign_[i];
 
             CpfMean +=
-                Cpf.boundaryField()[patchI][faceI]
-               *mesh_.magSf().boundaryField()[patchI][faceI];
+                Cpf.boundaryField()[patchi][facei]
+               *mesh_.magSf().boundaryField()[patchi][facei];
         }
         else
         {
-            totalphi += phi[faceI]*faceSign_[i];
-            CpfMean += Cpf[faceI]*mesh_.magSf()[faceI];
+            totalphi += phi[facei]*faceSign_[i];
+            CpfMean += Cpf[facei]*mesh_.magSf()[facei];
         }
     }
     reduce(CpfMean, sumOp<scalar>());
@@ -285,7 +272,7 @@ void Foam::fv::effectivenessHeatExchangerSource::addSup
     }
     reduce(sumWeight, sumOp<scalar>());
 
-    if (this->V() > VSMALL && mag(Qt) > VSMALL)
+    if (this->V() > vSmall && mag(Qt) > vSmall)
     {
         scalarField& heSource = eqn.source();
 
@@ -307,16 +294,9 @@ void Foam::fv::effectivenessHeatExchangerSource::addSup
 }
 
 
-void Foam::fv::effectivenessHeatExchangerSource::writeData(Ostream& os) const
-{
-    os  << indent << name_ << endl;
-    dict_.write(os);
-}
-
-
 bool Foam::fv::effectivenessHeatExchangerSource::read(const dictionary& dict)
 {
-    if (option::read(dict))
+    if (cellSetOption::read(dict))
     {
         coeffs_.lookup("secondaryMassFlowRate") >> secondaryMassFlowRate_;
         coeffs_.lookup("secondaryInletT") >> secondaryInletT_;

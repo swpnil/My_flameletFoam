@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -65,61 +65,56 @@ Foam::fv::radialActuationDiskSource::radialActuationDiskSource
 void Foam::fv::radialActuationDiskSource::addSup
 (
     fvMatrix<vector>& eqn,
-    const label fieldI
+    const label fieldi
 )
 {
-    bool compressible = false;
-    if (eqn.dimensions() == dimForce)
-    {
-        compressible = true;
-    }
-
     const scalarField& cellsV = mesh_.V();
     vectorField& Usource = eqn.source();
     const vectorField& U = eqn.psi();
 
-    if (V_ > VSMALL)
+    if (V_ > vSmall)
     {
-        if (compressible)
-        {
-            addRadialActuationDiskAxialInertialResistance
-            (
-                Usource,
-                cells_,
-                cellsV,
-                mesh_.lookupObject<volScalarField>("rho"),
-                U
-            );
-        }
-        else
-        {
-            addRadialActuationDiskAxialInertialResistance
-            (
-                Usource,
-                cells_,
-                cellsV,
-                geometricOneField(),
-                U
-            );
-        }
+        addRadialActuationDiskAxialInertialResistance
+        (
+            Usource,
+            cells_,
+            cellsV,
+            geometricOneField(),
+            U
+        );
     }
 }
 
 
-void Foam::fv::radialActuationDiskSource::writeData(Ostream& os) const
+void Foam::fv::radialActuationDiskSource::addSup
+(
+    const volScalarField& rho,
+    fvMatrix<vector>& eqn,
+    const label fieldi
+)
 {
-    actuationDiskSource::writeData(os);
+    const scalarField& cellsV = mesh_.V();
+    vectorField& Usource = eqn.source();
+    const vectorField& U = eqn.psi();
+
+    if (V_ > vSmall)
+    {
+        addRadialActuationDiskAxialInertialResistance
+        (
+            Usource,
+            cells_,
+            cellsV,
+            rho,
+            U
+        );
+    }
 }
 
 
 bool Foam::fv::radialActuationDiskSource::read(const dictionary& dict)
 {
-    if (option::read(dict))
+    if (actuationDiskSource::read(dict))
     {
-        coeffs_.readIfPresent("diskDir", diskDir_);
-        coeffs_.readIfPresent("Cp", Cp_);
-        coeffs_.readIfPresent("Ct", Ct_);
-        coeffs_.readIfPresent("diskArea", diskArea_);
         coeffs_.lookup("coeffs") >> radialCoeffs_;
         return true;
     }

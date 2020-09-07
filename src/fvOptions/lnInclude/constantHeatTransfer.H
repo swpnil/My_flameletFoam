@@ -1,1 +1,1 @@
-../sources/interRegion/interRegionHeatTransferModel/constantHeatTransfer/constantHeatTransfer.H
+../sources/interRegion/interRegionHeatTransfer/constantHeatTransfer/constantHeatTransfer.H

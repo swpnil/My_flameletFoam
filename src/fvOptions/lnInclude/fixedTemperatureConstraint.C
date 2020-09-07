@@ -1,1 +1,1 @@
-../constraints/derived/fixedTemperatureConstraint/fixedTemperatureConstraint.C
+../constraints/fixedTemperatureConstraint/fixedTemperatureConstraint.C

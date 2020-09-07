@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -42,14 +42,11 @@ Description
     Example of the source specification:
 
     \verbatim
-    <Type>SemiImplicitSourceCoeffs
+    volumeMode      absolute; // specific
+    injectionRateSuSp
     {
-        volumeMode      absolute; // specific
-        injectionRateSuSp
-        {
-            k           (30.7 0);
-            epsilon     (1.5  0);
-        }
+        k           (30.7 0);
+        epsilon     (1.5  0);
     }
     \endverbatim
 
@@ -57,7 +54,7 @@ Description
     - absolute: values are given as \<quantity\>
     - specific: values are given as \<quantity\>/m3
 
-SeeAlso
+See also
     Foam::fvOption
 
 SourceFiles
@@ -69,7 +66,7 @@ SourceFiles
 #define SemiImplicitSource_H
 
 #include "Tuple2.H"
-#include "fvOption.H"
+#include "cellSetOption.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -80,9 +77,9 @@ namespace fv
 
 // Forward declaration of classes
 
-
 template<class Type>
 class SemiImplicitSource;
+
 
 // Forward declaration of friend functions
 
@@ -93,6 +90,7 @@ Ostream& operator<<
     const SemiImplicitSource<Type>&
 );
 
+
 /*---------------------------------------------------------------------------*\
                      Class SemiImplicitSource Declaration
 \*---------------------------------------------------------------------------*/
@@ -100,7 +98,7 @@ Ostream& operator<<
 template<class Type>
 class SemiImplicitSource
 :
-    public option
+    public cellSetOption
 {
 public:
 
@@ -128,7 +126,7 @@ protected:
         scalar VDash_;
 
         //- Source field values
-        List<Tuple2<Type, scalar> > injectionRate_;
+        List<Tuple2<Type, scalar>> injectionRate_;
 
 
     // Protected functions
@@ -169,7 +167,7 @@ public:
             inline const volumeModeType& volumeMode() const;
 
             //- Return const access to the source field values
-            inline const List<Tuple2<Type, scalar> >& injectionRate() const;
+            inline const List<Tuple2<Type, scalar>>& injectionRate() const;
 
 
         // Edit
@@ -178,19 +176,28 @@ public:
             inline volumeModeType& volumeMode();
 
             //- Return access to the source field values
-            inline List<Tuple2<Type, scalar> >& injectionRate();
+            inline List<Tuple2<Type, scalar>>& injectionRate();
 
 
         // Evaluation
 
             //- Add explicit contribution to equation
-            virtual void addSup(fvMatrix<Type>& eqn, const label fieldI);
+            virtual void addSup
+            (
+                fvMatrix<Type>& eqn,
+                const label fieldi
+            );
+
+            //- Add explicit contribution to compressible equation
+            virtual void addSup
+            (
+                const volScalarField& rho,
+                fvMatrix<Type>& eqn,
+                const label fieldi
+            );
 
 
-        // I-O
-
-            //- Write the source properties
-            virtual void writeData(Ostream&) const;
+        // IO
 
             //- Read source dictionary
             virtual bool read(const dictionary& dict);
@@ -205,8 +212,8 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-#   include "SemiImplicitSource.C"
-#   include "SemiImplicitSourceIO.C"
+    #include "SemiImplicitSource.C"
+    #include "SemiImplicitSourceIO.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

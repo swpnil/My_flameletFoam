@@ -3,16 +3,15 @@ EXE_INC = \
     -I$(LIB_SRC)/meshTools/lnInclude \
     -I$(LIB_SRC)/sampling/lnInclude \
     -I$(LIB_SRC)/thermophysicalModels/solidThermo/lnInclude \
-    -I$(LIB_FLAMELET_SRC)/thermophysicalModels/basic/lnInclude \
-    -I$(LIB_FLAMELET_SRC)/thermophysicalModels/specie/lnInclude \
-    -I$(LIB_FLAMELET_SRC)/turbulenceModels/compressible/turbulenceModel/lnInclude \
-    -I$(LIB_FLAMELET_SRC)/turbulenceModels
-
+    -I$(LIB_SRC)/transportModels/compressible/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/basic/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/specie/lnInclude \
+    -I$(LIB_SRC)/TurbulenceModels/turbulenceModels/lnInclude \
+    -I$(LIB_SRC)/TurbulenceModels/compressible/lnInclude
 
 LIB_LIBS = \
-    -L$(FOAM_USER_LIBBIN) \
     -lfiniteVolume \
     -lsampling \
     -lmeshTools \
-    /*-lsolidThermo*/ \
-    -lFlameletcompressibleTurbulenceModel
+    -lturbulenceModels \
+    -lcompressibleTurbulenceModels

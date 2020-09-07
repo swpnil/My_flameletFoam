@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -59,26 +59,23 @@ Description
         T_{ref} | min or max(T) in cell zone depending on the sign of Q_t [K]
     \endvartable
 
-    \heading Source usage
-
+Usage
     Example usage:
     \verbatim
     effectivenessHeatExchangerSource1
     {
         type            effectivenessHeatExchangerSource;
-        active          true;
+        active          yes;
+
         selectionMode   cellZone;
         cellZone        porosity;
 
-        effectivenessHeatExchangerSourceCoeffs
-        {
-            secondaryMassFlowRate   1.0;
-            secondaryInletT         336;
-            primaryInletT           293;
-            faceZone                facesZoneInletOriented;
-            outOfBounds             clamp;
-            fileName                "effTable";
-        }
+        secondaryMassFlowRate   1.0;
+        secondaryInletT         336;
+        primaryInletT           293;
+        faceZone                facesZoneInletOriented;
+        outOfBounds             clamp;
+        file                    "effTable";
     }
     \endverbatim
 
@@ -118,7 +115,7 @@ Description
 
 
 Note
-- the table with name "fileName" should have the same units as the
+- the table with name "file" should have the same units as the
   secondary mass flow rate and kg/s for phi
 - faceZone is the faces at the inlet of the cellzone, it needs to be
   created with flip map flags. It is used to integrate the net mass flow
@@ -133,7 +130,7 @@ SourceFiles
 #ifndef effectivenessHeatExchangerSource_H
 #define effectivenessHeatExchangerSource_H
 
-#include "fvOption.H"
+#include "cellSetOption.H"
 #include "autoPtr.H"
 #include "interpolation2DTable.H"
 
@@ -150,7 +147,7 @@ namespace fv
 
 class effectivenessHeatExchangerSource
 :
-    public option
+    public cellSetOption
 {
 
 protected:
@@ -168,7 +165,7 @@ protected:
 
         //- 2D look up table efficiency = function of primary and secondary
         // mass flow rates [kg/s]
-        autoPtr<interpolation2DTable<scalar> > eTable_;
+        autoPtr<interpolation2DTable<scalar>> eTable_;
 
         //- Name of velocity field; default = U
         word UName_;
@@ -202,7 +199,6 @@ private:
 
     // Private Member Functions
 
-
         //- Disallow default bitwise copy construct
         effectivenessHeatExchangerSource
         (
@@ -215,7 +211,7 @@ private:
         //- Initialise heat exchanger source model
         void initialise();
 
-        //- Calculate total area of faceZone accross processors
+        //- Calculate total area of faceZone across processors
         void calculateTotalArea(scalar& area);
 
 
@@ -244,19 +240,31 @@ public:
 
     // Member Functions
 
-        virtual bool alwaysApply() const;
+        // Explicit and implicit source
+
+            //- Scalar
+            virtual void addSup
+            (
+                fvMatrix<scalar>& eqn,
+                const label fieldi
+            )
+            {
+                NotImplemented;
+            }
 
 
-        // Public Functions
+        // Explicit and implicit source for compressible equation
 
-            //- Source term to fvMatrix<scalar>
-            virtual void addSup(fvMatrix<scalar>& eqn, const label fieldI);
+            //- Scalar
+            virtual void addSup
+            (
+                const volScalarField& rho,
+                fvMatrix<scalar>& eqn,
+                const label fieldi
+            );
 
 
-        // I-O
-
-            //- Write data
-            virtual void writeData(Ostream&) const;
+        // IO
 
             //- Read dictionary
             virtual bool read(const dictionary& dict);

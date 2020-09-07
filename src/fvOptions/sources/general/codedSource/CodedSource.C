@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2012-2014 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2012-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -29,7 +29,7 @@ License
 #include "dynamicCode.H"
 #include "dynamicCodeContext.H"
 
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
+// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
 template<class Type>
 void Foam::fv::CodedSource<Type>::prepare
@@ -41,11 +41,11 @@ void Foam::fv::CodedSource<Type>::prepare
     word sourceType(pTraits<Type>::typeName);
 
     // Set additional rewrite rules
-    dynCode.setFilterVariable("typeName", redirectType_);
+    dynCode.setFilterVariable("typeName", name_);
     dynCode.setFilterVariable("TemplateType", sourceType);
     dynCode.setFilterVariable("SourceType", sourceType + "Source");
 
-    //dynCode.removeFilterVariable("code");
+    // dynCode.removeFilterVariable("code");
     dynCode.setFilterVariable("codeCorrect", codeCorrect_);
     dynCode.setFilterVariable("codeAddSup", codeAddSup_);
     dynCode.setFilterVariable("codeSetValue", codeSetValue_);
@@ -58,17 +58,17 @@ void Foam::fv::CodedSource<Type>::prepare
 
     // debugging: make BC verbose
     //         dynCode.setFilterVariable("verbose", "true");
-    //         Info<<"compile " << redirectType_ << " sha1: "
+    //         Info<<"compile " << name_ << " sha1: "
     //             << context.sha1() << endl;
 
     // define Make/options
     dynCode.setMakeOptions
         (
             "EXE_INC = -g \\\n"
-            "-I$(LIB_SRC)/fvOptions/lnInclude \\\n"
             "-I$(LIB_SRC)/finiteVolume/lnInclude \\\n"
             "-I$(LIB_SRC)/meshTools/lnInclude \\\n"
             "-I$(LIB_SRC)/sampling/lnInclude \\\n"
+            "-I$(LIB_SRC)/fvOptions/lnInclude \\\n"
             + context.options()
             + "\n\nLIB_LIBS = \\\n"
             + "    -lmeshTools \\\n"
@@ -119,7 +119,7 @@ Foam::fv::CodedSource<Type>::CodedSource
     const fvMesh& mesh
 )
 :
-    option(name, modelType, dict, mesh)
+    cellSetOption(name, modelType, dict, mesh)
 {
     read(dict);
 }
@@ -133,11 +133,11 @@ Foam::fv::option& Foam::fv::CodedSource<Type>::redirectFvOption() const
     if (!redirectFvOptionPtr_.valid())
     {
         dictionary constructDict(dict_);
-        constructDict.set("type", redirectType_);
+        constructDict.set("type", name_);
 
         redirectFvOptionPtr_ = option::New
         (
-            redirectType_,
+            name_,
             constructDict,
             mesh_
         );
@@ -149,7 +149,7 @@ Foam::fv::option& Foam::fv::CodedSource<Type>::redirectFvOption() const
 template<class Type>
 void Foam::fv::CodedSource<Type>::correct
 (
-    GeometricField<Type, fvPatchField, volMesh>& fld
+    GeometricField<Type, fvPatchField, volMesh>& field
 )
 {
     if (debug)
@@ -158,8 +158,8 @@ void Foam::fv::CodedSource<Type>::correct
             << ">::correct for source " << name_ << endl;
     }
 
-    updateLibrary(redirectType_);
-    redirectFvOption().correct(fld);
+    updateLibrary(name_);
+    redirectFvOption().correct(field);
 }
 
 
@@ -167,7 +167,7 @@ template<class Type>
 void Foam::fv::CodedSource<Type>::addSup
 (
     fvMatrix<Type>& eqn,
-    const label fieldI
+    const label fieldi
 )
 {
     if (debug)
@@ -176,26 +176,45 @@ void Foam::fv::CodedSource<Type>::addSup
             << ">::addSup for source " << name_ << endl;
     }
 
-    updateLibrary(redirectType_);
-    redirectFvOption().addSup(eqn, fieldI);
+    updateLibrary(name_);
+    redirectFvOption().addSup(eqn, fieldi);
 }
 
 
 template<class Type>
-void Foam::fv::CodedSource<Type>::setValue
+void Foam::fv::CodedSource<Type>::addSup
 (
+    const volScalarField& rho,
     fvMatrix<Type>& eqn,
-    const label fieldI
+    const label fieldi
 )
 {
     if (debug)
     {
         Info<< "CodedSource<"<< pTraits<Type>::typeName
-            << ">::setValue for source " << name_ << endl;
+            << ">::addSup for source " << name_ << endl;
     }
 
-    updateLibrary(redirectType_);
-    redirectFvOption().setValue(eqn, fieldI);
+    updateLibrary(name_);
+    redirectFvOption().addSup(rho, eqn, fieldi);
+}
+
+
+template<class Type>
+void Foam::fv::CodedSource<Type>::constrain
+(
+    fvMatrix<Type>& eqn,
+    const label fieldi
+)
+{
+    if (debug)
+    {
+        Info<< "CodedSource<"<< pTraits<Type>::typeName
+            << ">::constrain for source " << name_ << endl;
+    }
+
+    updateLibrary(name_);
+    redirectFvOption().constrain(eqn, fieldi);
 }
 
 

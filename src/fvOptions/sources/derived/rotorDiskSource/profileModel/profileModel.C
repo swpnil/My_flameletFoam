@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -51,7 +51,7 @@ Foam::profileModel::profileModel(const dictionary& dict, const word& name)
     name_(name),
     fName_(fileName::null)
 {
-    dict.readIfPresent("fileName", fName_);
+    dict.readIfPresent("file", fName_);
 }
 
 // * * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * //
@@ -84,7 +84,7 @@ Foam::autoPtr<Foam::profileModel> Foam::profileModel::New
 
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
-        FatalErrorIn("profileModel::New(const dictionary&)")
+        FatalErrorInFunction
             << "Unknown profile model type " << modelType
             << nl << nl
             << "Valid model types are :" << nl

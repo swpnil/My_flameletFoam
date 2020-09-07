@@ -1,1 +1,1 @@
-../sources/interRegion/interRegionHeatTransferModel/interRegionHeatTransferModel/interRegionHeatTransferModelTemplates.C
+../sources/interRegion/interRegionHeatTransfer/interRegionHeatTransferModel/interRegionHeatTransferModelTemplates.C

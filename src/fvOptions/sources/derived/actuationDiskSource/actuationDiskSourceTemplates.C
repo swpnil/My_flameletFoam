@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -40,13 +40,13 @@ void Foam::fv::actuationDiskSource::addActuationDiskAxialInertialResistance
 {
     scalar a = 1.0 - Cp_/Ct_;
     vector uniDiskDir = diskDir_/mag(diskDir_);
-    tensor E(tensor::zero);
+    tensor E(Zero);
     E.xx() = uniDiskDir.x();
     E.yy() = uniDiskDir.y();
     E.zz() = uniDiskDir.z();
 
-    vector upU = vector(VGREAT, VGREAT, VGREAT);
-    scalar upRho = VGREAT;
+    vector upU = vector(vGreat, vGreat, vGreat);
+    scalar upRho = vGreat;
     if (upstreamCellId_ != -1)
     {
         upU =  U[upstreamCellId_];

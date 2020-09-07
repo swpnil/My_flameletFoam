@@ -1,1 +1,1 @@
-../sources/interRegion/interRegionHeatTransferModel/tabulatedHeatTransfer/tabulatedHeatTransfer.C
+../sources/interRegion/interRegionHeatTransfer/tabulatedHeatTransfer/tabulatedHeatTransfer.C
